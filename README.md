@@ -15,9 +15,8 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 - **Máy 2-4**: MongoDB Sharded Cluster (3 shards)
 
 ### Development Environment (Hybrid Local)
-- MongoDB Sharded Cluster chạy trên Docker containers
-- Neo4j cài đặt native trên Windows  
-- Web application chạy local
+- **Native Windows**: Neo4j + Web App + MongoDB Router (mongos) + Mongo Express
+- **Docker containers**: 3 Shards + 3 Config Servers (mỗi container: 1 Shard + 1 Config)
 
 ## Công nghệ sử dụng
 - **Node.js** - JavaScript runtime environment
@@ -32,9 +31,19 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 ## Cài đặt và chạy dự án
 
 ### Yêu cầu hệ thống
-- Node.js (phiên bản 16.x trở lên)
-- Docker Desktop (cho development)
-- npm hoặc yarn
+
+**DEMO Production (4 máy Windows)**:
+- MongoDB Community Server 7.0+
+- Node.js 18.x+  
+- Neo4j Desktop/Community 5.15+
+- Windows 10/11, RAM 4GB+
+
+**DEV Local (1 máy hybrid)**:
+- MongoDB Community Server 7.0+ (cho mongos)
+- Node.js 18.x+
+- Neo4j Desktop 5.15+
+- Docker Desktop
+- Windows 10/11, RAM 8GB+
 
 ## 🚀 Hai mô hình triển khai
 
@@ -44,17 +53,27 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 **Kiến trúc**: PC-1 (Web+Router+Neo4j), PC-2,3,4 (Shard+Config mỗi máy)  
 **Mục đích**: Demo với high availability, failover thực tế
 
-### 2. 💻 **DEV Local**: 1 máy + Docker containers  
+### 2. 💻 **DEV Local**: 1 máy + Docker containers (Hybrid)
 **Quick Start**: `script/QUICK_START.md` | **Chi tiết**: `script/mongodb-cluster/docker/setup-docker.md`
 
-**Kiến trúc**: Neo4j native + Web App local + MongoDB Docker containers  
-**Mục đích**: Development khi không có sẵn 4 máy nhóm
+**Kiến trúc**:
+- **Native Windows**: Neo4j + Web App + MongoDB Router (mongos)
+- **Docker containers**: 3 Shards + 3 Config Servers  
+
+**Mục đích**: Development gần giống production, dễ debug và monitor
 
 ### Truy cập các services:
+
+**Native components (cả DEMO & DEV)**:
 - **Web App**: http://localhost:3000  
-- **MongoDB**: mongodb://localhost:27017/socialnetwork
-- **Neo4j**: http://localhost:7474 (neo4j/password123)
-- **MongoDB Express**: http://localhost:8081 (admin/admin123)
+- **MongoDB Router**: mongodb://localhost:27017/socialnetwork
+- **Neo4j Browser**: http://localhost:7474 (neo4j/password123)
+
+**DEV Docker components**:
+- **Config Server**: localhost:27019
+- **Shard 1**: localhost:27018  
+- **Shard 2**: localhost:27020
+- **Shard 3**: localhost:27021
 
 ## Cấu trúc dự án
 
@@ -72,7 +91,11 @@ CT574T_Nhom3/
 │   ├── error.jade
 │   ├── index.jade
 │   └── layout.jade
-├── script/                 # Scripts bổ sung
+├── script/                 # MongoDB + Neo4j setup scripts
+│   ├── QUICK_START.md     # DEV environment quick start  
+│   ├── mongodb-cluster/   # MongoDB Sharded Cluster setup
+│   ├── neo4j/            # Neo4j native Windows setup
+│   └── integration/      # MongoDB + Neo4j connection
 ├── app.js                  # Cấu hình Express app
 ├── package.json           # Dependencies và scripts
 └── README.md              # Tài liệu dự án
@@ -80,18 +103,51 @@ CT574T_Nhom3/
 
 ## Scripts có sẵn
 
-- `npm start` - Chạy ứng dụng ở chế độ production
+- `npm start` - Chạy ứng dụng (cần MongoDB và Neo4j sẵn sàng)
+- `npm install` - Cài đặt dependencies
 
-## Thành viên nhóm 3
-- [Tên thành viên 1] - [MSSV] - [Email]
-- [Tên thành viên 2] - [MSSV] - [Email]
-- [Tên thành viên 3] - [MSSV] - [Email]
+### Quick Setup Commands
+
+**DEMO Production**: Xem `script/mongodb-cluster/production/windows-production-guide.md`
+
+**DEV Local**: 
+```bash
+# 1. Start Docker containers
+cd script/mongodb-cluster/docker
+docker-compose up mongo-config mongo-shard1 mongo-shard2 mongo-shard3 -d
+
+# 2. Initialize replica sets và start mongos native 
+# (xem chi tiết trong script/QUICK_START.md)
+
+# 3. Start web app
+npm start
+```
+
+## Thành viên nhóm 4
+- [Tên thành viên 1] - [MSHV] - [Email]
+- [Tên thành viên 2] - [MSHV] - [Email]
+- [Tên thành viên 3] - [MSHV] - [Email]
+- [Tên thành viên 4] - [MSHV] - [Email]
+
+## Điểm đặc biệt của kiến trúc
+
+### MongoDB Sharded Cluster với 3 Config Servers
+- ✅ **High Availability**: Chịu được 1 Config Server down
+- ✅ **No Single Point of Failure**: Cluster vẫn hoạt động 
+- ✅ **Production Ready**: Tuân thủ MongoDB best practices
+- ✅ **Failover Demo**: Có thể demo khả năng chịu lỗi
+
+### DEV Environment Hybrid Design
+- ✅ **Gần giống Production**: mongos và Web App native như production
+- ✅ **Dễ debug**: Có thể debug mongos và web app trực tiếp  
+- ✅ **Performance tốt**: Native components nhanh hơn Docker
+- ✅ **Flexible**: Restart từng component riêng biệt
 
 ## Tính năng chính
 - **Quản lý người dùng**: Đăng ký, đăng nhập, cập nhật thông tin
-- **Quản lý bài viết**: Tạo, sửa, xóa, xem bài viết
-- **Hệ thống bình luận**: Bình luận trên bài viết
-- **Mối quan hệ người dùng**: Follow/Unfollow, kết bạn (lưu trong Neo4j)
+- **Quản lý bài viết**: Tạo, sửa, xóa, xem bài viết (MongoDB Sharding)
+- **Hệ thống bình luận**: Bình luận trên bài viết (MongoDB Sharding)
+- **Mối quan hệ người dùng**: Follow/Unfollow, kết bạn (Neo4j Graph DB)
 
 ## API Endpoints
 ```
@@ -124,10 +180,17 @@ GET /users/:id/followers - Danh sách followers
 - **posts**: Bài viết của người dùng  
 - **comments**: Bình luận trên bài viết
 
-### Neo4j Nodes & Relationships
-- **User nodes**: Thông tin cơ bản người dùng
+### Neo4j Nodes & Relationships  
+- **User nodes**: Thông tin cơ bản người dùng (đồng bộ từ MongoDB)
 - **FOLLOWS relationship**: Mối quan hệ follow giữa users
 - **FRIENDS relationship**: Mối quan hệ bạn bè
+
+### Data Distribution Strategy
+- **MongoDB Sharding Keys**:
+  - `users` collection: Shard theo `user_id` 
+  - `posts` collection: Shard theo `user_id`
+  - `comments` collection: Shard theo `post_id`
+- **Neo4j**: Tất cả relationships trong 1 graph database
 
 ## Đóng góp
 1. Fork dự án
