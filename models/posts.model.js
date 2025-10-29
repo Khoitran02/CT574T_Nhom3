@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const postSchema = new mongoose.Schema(
   {
     title: {
@@ -22,7 +21,7 @@ const postSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Tự động thêm createdAt, updatedAt
+    timestamps: true,
   }
 );
 

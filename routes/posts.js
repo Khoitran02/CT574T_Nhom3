@@ -1,4 +1,3 @@
-// routes/posts.js
 import express from "express";
 import Post from "../models/posts.model.js";
 import { getNeo4jDriver } from "../config/database.js";
