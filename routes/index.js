@@ -1,9 +1,12 @@
-var express = require('express');
-var router = express.Router();
+// routes/index.js
+import express from "express";
+import postRoutes from "./posts.js";
+import userRoutes from "./users.js";
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+const router = express.Router();
 
-module.exports = router;
+// Kết hợp tất cả routes
+router.use("/posts", postRoutes);
+router.use("/users", userRoutes);
+
+export default router;
