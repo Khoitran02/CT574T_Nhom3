@@ -1,41 +1,60 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+// app.js
+import express from "express";
+import dotenv from "dotenv";
+import {
+  connectMongoDBPost,
+  connectMongoDBPhotos,
+  connectNeo4j,
+  closeAllConnections,
+} from "./config/database.js";
+import routes from "./routes/index.js";
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+dotenv.config();
 
-var app = express();
+const app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
+// Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static("public"));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// Kết nối databases
+connectMongoDBPost();
+connectMongoDBPhotos();
+connectNeo4j();
+closeAllConnections();
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Routes
+app.use("/api", routes);
+
+// Health check với thông tin databases
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Server đang hoạt động tốt",
+    databases: {
+      mongoPosts: {
+        name: process.env.MONGO_DB_POST,
+        status: "Connected",
+      },
+      mongoPhotos: {
+        name: process.env.MONGO_DB_PHOTOS,
+        status: "Connected",
+      },
+      neo4j: {
+        name: process.env.NEO4J_DATABASE,
+        instance: process.env.AURA_INSTANCENAME,
+        status: "Connected",
+      },
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  console.log("\n🔄 Đang dừng server...");
+  await closeAllConnections();
+  process.exit(0);
 });
 
-module.exports = app;
+export default app;
