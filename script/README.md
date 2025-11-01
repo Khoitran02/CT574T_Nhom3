@@ -40,13 +40,12 @@ script/
 **Quick Start**: `QUICK_START.md`
 
 **Kiến trúc**:
-- **Native trên Windows**: Neo4j + Web App + MongoDB Router (mongos) + Mongo Express
-- **Docker containers**: 3 containers (mỗi container: 1 Shard + 1 Config Server)
-  - Container 1: Shard 1 + Config Server 1
-  - Container 2: Shard 2 + Config Server 2  
-  - Container 3: Shard 3 + Config Server 3
+- **Native Windows**: Neo4j + Web App + MongoDB Router (mongos)
+- **Docker containers**: 3 Config Servers + 3 Shards (giống hệt Production)
+  - Config Servers: 27019, 27119, 27219
+  - Shards: 27018, 27020, 27021
 
-**Mục đích**: Development gần giống production, dễ debug và monitor
+**Mục đích**: Development với **identical architecture** như Production, test high availability
 
 ## Yêu cầu hệ thống
 

@@ -12,20 +12,20 @@ cd CT574T_Nhom3
 npm install
 ```
 
-### 2. Khởi động Docker containers (chỉ Shards + Config)
+### 2. Khởi động Docker containers (3 Config + 3 Shards)
 ```bash
 cd script/mongodb-cluster/docker
-docker-compose up mongo-config mongo-shard1 mongo-shard2 mongo-shard3 -d
+docker-compose up mongo-config1 mongo-config2 mongo-config3 mongo-shard1 mongo-shard2 mongo-shard3 -d
 ```
 
 ### 3. Cấu hình replica sets (Docker containers)
 ```bash
 # Chờ containers khởi động 2-3 phút, sau đó:
 
-# Config Server replica set
-docker exec mongo-config mongosh --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'mongo-config:27019'}]})"
+# Config Server replica set (3 members)
+docker exec mongo-config1 mongosh --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'mongo-config1:27019'}, {_id: 1, host: 'mongo-config2:27119'}, {_id: 2, host: 'mongo-config3:27219'}]})"
 
-# Shard replica sets
+# Shard replica sets  
 docker exec mongo-shard1 mongosh --port 27018 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: 'mongo-shard1:27018'}]})"
 docker exec mongo-shard2 mongosh --port 27020 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: 'mongo-shard2:27020'}]})"
 docker exec mongo-shard3 mongosh --port 27021 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: 'mongo-shard3:27021'}]})"
@@ -42,7 +42,7 @@ notepad C:\mongodb\mongos.conf
 #   port: 27017
 #   bindIp: 127.0.0.1
 # sharding:
-#   configDB: configrs/localhost:27019
+#   configDB: configrs/localhost:27019,localhost:27119,localhost:27219
 
 # Chạy mongos (terminal riêng)
 mongos --config C:\mongodb\mongos.conf

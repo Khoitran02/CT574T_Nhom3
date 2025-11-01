@@ -1,16 +1,40 @@
 version: '3.8'
 
 services:
-  # Config Server
-  mongo-config:
+  # Config Server 1
+  mongo-config1:
     image: mongo:7.0
-    container_name: mongo-config
+    container_name: mongo-config1
     command: mongod --configsvr --replSet configrs --port 27019 --dbpath /data/configdb
     ports:
       - "27019:27019"
     volumes:
-      - mongo-config-data:/data/configdb
+      - mongo-config1-data:/data/configdb
       - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - mongo-cluster
+
+  # Config Server 2
+  mongo-config2:
+    image: mongo:7.0
+    container_name: mongo-config2
+    command: mongod --configsvr --replSet configrs --port 27119 --dbpath /data/configdb
+    ports:
+      - "27119:27119"
+    volumes:
+      - mongo-config2-data:/data/configdb
+    networks:
+      - mongo-cluster
+
+  # Config Server 3
+  mongo-config3:
+    image: mongo:7.0
+    container_name: mongo-config3
+    command: mongod --configsvr --replSet configrs --port 27219 --dbpath /data/configdb
+    ports:
+      - "27219:27219"
+    volumes:
+      - mongo-config3-data:/data/configdb
     networks:
       - mongo-cluster
 
@@ -54,11 +78,13 @@ services:
   mongo-router:
     image: mongo:7.0
     container_name: mongo-router
-    command: mongos --configdb configrs/mongo-config:27019 --port 27017
+    command: mongos --configdb configrs/mongo-config1:27019,mongo-config2:27119,mongo-config3:27219 --port 27017
     ports:
       - "27017:27017"
     depends_on:
-      - mongo-config
+      - mongo-config1
+      - mongo-config2
+      - mongo-config3
       - mongo-shard1
       - mongo-shard2
       - mongo-shard3
@@ -81,7 +107,9 @@ services:
       - mongo-cluster
 
 volumes:
-  mongo-config-data:
+  mongo-config1-data:
+  mongo-config2-data:
+  mongo-config3-data:
   mongo-shard1-data:
   mongo-shard2-data:
   mongo-shard3-data:

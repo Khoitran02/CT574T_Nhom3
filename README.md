@@ -58,9 +58,9 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 
 **Kiến trúc**:
 - **Native Windows**: Neo4j + Web App + MongoDB Router (mongos)
-- **Docker containers**: 3 Shards + 3 Config Servers  
+- **Docker containers**: 3 Shards + 3 Config Servers (giống Production)
 
-**Mục đích**: Development gần giống production, dễ debug và monitor
+**Mục đích**: Development **identical architecture** với Production, test high availability
 
 ### Truy cập các services:
 
@@ -70,7 +70,9 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 - **Neo4j Browser**: http://localhost:7474 (neo4j/password123)
 
 **DEV Docker components**:
-- **Config Server**: localhost:27019
+- **Config Server 1**: localhost:27019
+- **Config Server 2**: localhost:27119
+- **Config Server 3**: localhost:27219  
 - **Shard 1**: localhost:27018  
 - **Shard 2**: localhost:27020
 - **Shard 3**: localhost:27021
@@ -114,7 +116,7 @@ CT574T_Nhom3/
 ```bash
 # 1. Start Docker containers
 cd script/mongodb-cluster/docker
-docker-compose up mongo-config mongo-shard1 mongo-shard2 mongo-shard3 -d
+docker-compose up mongo-config1 mongo-config2 mongo-config3 mongo-shard1 mongo-shard2 mongo-shard3 -d
 
 # 2. Initialize replica sets và start mongos native 
 # (xem chi tiết trong script/QUICK_START.md)

@@ -31,23 +31,20 @@
               │
               │ Connects to
               ▼
-┌─────────────────────────────┐ ← Docker Containers
+┌─────────────────────────────┐ ← Docker Containers  
 │         Docker Host         │
-│  ┌─────────────────────┐    │
-│  │     Container 1     │    │
-│  │  Shard 1 + Config 1│    │
-│  │  Port: 27018,27019  │    │
-│  └─────────────────────┘    │
-│  ┌─────────────────────┐    │
-│  │     Container 2     │    │
-│  │  Shard 2 + Config 2│    │
-│  │  Port: 27020,27119  │    │
-│  └─────────────────────┘    │
-│  ┌─────────────────────┐    │
-│  │     Container 3     │    │
-│  │  Shard 3 + Config 3│    │
-│  │  Port: 27021,27219  │    │
-│  └─────────────────────┘    │
+│  ┌─────────┐ ┌─────────┐    │
+│  │Config 1 │ │Config 2 │    │ ← 3 Config Servers
+│  │:27019   │ │:27119   │    │   (High Availability)
+│  └─────────┘ └─────────┘    │
+│  ┌─────────┐ ┌─────────┐    │
+│  │Config 3 │ │ Shard 1 │    │
+│  │:27219   │ │:27018   │    │
+│  └─────────┘ └─────────┘    │  
+│  ┌─────────┐ ┌─────────┐    │
+│  │ Shard 2 │ │ Shard 3 │    │
+│  │:27020   │ │:27021   │    │
+│  └─────────┘ └─────────┘    │
 └─────────────────────────────┘
 ```
 
@@ -78,8 +75,8 @@ docker-compose --version
 # Di chuyển đến thư mục chứa docker-compose.yml
 cd script/mongodb-cluster/docker
 
-# Khởi động chỉ MongoDB containers (không có mongos và mongo-express)
-docker-compose up mongo-config mongo-shard1 mongo-shard2 mongo-shard3 -d
+# Khởi động MongoDB containers (3 Config + 3 Shards)
+docker-compose up mongo-config1 mongo-config2 mongo-config3 mongo-shard1 mongo-shard2 mongo-shard3 -d
 
 # Kiểm tra trạng thái containers
 docker-compose ps
@@ -90,21 +87,23 @@ Chờ khoảng 2-3 phút để tất cả containers khởi động hoàn tất.
 
 ## Bước 3: Cấu hình Replica Sets
 
-### 3.1 Cấu hình Config Server Replica Set
+### 3.1 Cấu hình Config Server Replica Set (3 members)
 ```bash
-# Kết nối vào config server
-docker exec -it mongo-config mongosh --port 27019
+# Kết nối vào config server 1
+docker exec -it mongo-config1 mongosh --port 27019
 
-# Khởi tạo replica set cho config server
+# Khởi tạo replica set cho config server với 3 members
 rs.initiate({
   _id: "configrs",
   configsvr: true,
   members: [
-    { _id: 0, host: "mongo-config:27019" }
+    { _id: 0, host: "mongo-config1:27019" },
+    { _id: 1, host: "mongo-config2:27119" },
+    { _id: 2, host: "mongo-config3:27219" }
   ]
 })
 
-# Kiểm tra trạng thái
+# Kiểm tra trạng thái (chờ election hoàn thành)
 rs.status()
 exit
 ```
@@ -160,7 +159,7 @@ net:
   port: 27017
   bindIp: 127.0.0.1
 sharding:
-  configDB: configrs/localhost:27019
+  configDB: configrs/localhost:27019,localhost:27119,localhost:27219
 ```
 
 ### 4.2 Khởi động mongos
@@ -283,8 +282,8 @@ docker-compose down
 
 ### 8.2 Khởi động lại
 ```bash
-# 1. Khởi động Docker containers
-docker-compose up mongo-config mongo-shard1 mongo-shard2 mongo-shard3 -d
+# 1. Khởi động Docker containers (3 Config + 3 Shards)
+docker-compose up mongo-config1 mongo-config2 mongo-config3 mongo-shard1 mongo-shard2 mongo-shard3 -d
 
 # 2. Khởi động Neo4j
 
@@ -352,7 +351,9 @@ docker exec -it mongo-router mongosh --eval "sh.status()"
 - **Neo4j Bolt**: bolt://localhost:7687
 
 ### Docker Components
-- **Config Server**: localhost:27019
+- **Config Server 1**: localhost:27019
+- **Config Server 2**: localhost:27119  
+- **Config Server 3**: localhost:27219
 - **Shard 1**: localhost:27018  
 - **Shard 2**: localhost:27020
 - **Shard 3**: localhost:27021
@@ -362,10 +363,17 @@ docker exec -it mongo-router mongosh --eval "sh.status()"
 # Kiểm tra cluster status
 mongosh --port 27017 --eval "sh.status()"
 
+# Kiểm tra Config Server replica set
+docker exec mongo-config1 mongosh --port 27019 --eval "rs.status()"
+
 # Kiểm tra Docker containers
 docker ps
 
 # Xem logs
+docker logs mongo-config1
 docker logs mongo-shard1
-docker logs mongo-config
+
+# Test failover - stop 1 config server
+docker stop mongo-config2
+# Cluster vẫn hoạt động với 2/3 Config Servers
 ```
