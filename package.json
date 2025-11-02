@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test-neo4j": "node test-neo4j.js"
+    "test-neo4j": "node test-neo4j.js",
+    "test-mongodb": "node test-mongodb.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

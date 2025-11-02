@@ -47,20 +47,49 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 
 ## 🚀 Hai mô hình triển khai
 
-### 1. 🎯 **DEMO Production**: 4 máy Windows thực tế  
-**Hướng dẫn**: `script/mongodb-cluster/production/windows-production-guide.md`
+### 1. **Development** (Docker containers trên 1 máy)
+- 📋 **Mục đích**: Development, Testing, Demo, Learning
+- 🔧 **Yêu cầu**: Docker Desktop + Neo4j Desktop  
+- ⏱️ **Setup time**: 5 phút (tự động)
+- 💾 **Tài nguyên**: ~2-3 GB RAM
+- 📖 **Hướng dẫn**: [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)
 
-**Kiến trúc**: PC-1 (Web+Router+Neo4j), PC-2,3,4 (Shard+Config mỗi máy)  
-**Mục đích**: Demo với high availability, failover thực tế
+### 2. **Production** (4 máy Windows thực tế)
+- 📋 **Mục đích**: Production environment, High availability
+- � **Yêu cầu**: 4 máy Windows trong cùng LAN
+- ⏱️ **Setup time**: 30-45 phút  
+- 💾 **Tài nguyên**: Phân tán trên 4 máy
+- 📖 **Hướng dẫn**: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
-### 2. 💻 **DEV Local**: 1 máy + Docker containers (Hybrid)
-**Quick Start**: `script/QUICK_START.md` | **Chi tiết**: `script/mongodb-cluster/docker/setup-docker.md`
+---
 
-**Kiến trúc**:
-- **Native Windows**: Neo4j + Web App + MongoDB Router (mongos)
-- **Docker containers**: 3 Shards + 3 Config Servers (giống Production)
+## ⚡ Quick Start
 
-**Mục đích**: Development **identical architecture** với Production, test high availability
+### Development (1 máy - Hybrid)
+```cmd
+# Clone project
+git clone [repo-url]
+cd CT574T_Nhom3
+
+# Start containers và cấu hình từng bước (10 phút)
+docker-compose up -d
+# Theo hướng dẫn chi tiết trong docs/DEVELOPMENT_SETUP.md
+
+# Setup Neo4j và start web app
+npm install
+npm start
+```
+
+### Production (4 máy LAN)
+```cmd
+# Setup MongoDB trên tất cả 4 máy
+# Cấu hình từng bước thủ công (30 phút)
+# Theo hướng dẫn chi tiết trong docs/PRODUCTION_SETUP.md
+
+# Kết quả: Cluster production-ready
+```
+
+**Chi tiết**: [QUICK_START.md](QUICK_START.md)
 
 ### Truy cập các services:
 
@@ -71,36 +100,33 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 
 **DEV Docker components**:
 - **Config Server 1**: localhost:27019
-- **Config Server 2**: localhost:27119
-- **Config Server 3**: localhost:27219  
-- **Shard 1**: localhost:27018  
-- **Shard 2**: localhost:27020
-- **Shard 3**: localhost:27021
+- **Config Server 2**: localhost:27020
+- **Config Server 3**: localhost:27021  
+- **Shard 1**: localhost:27022  
+- **Shard 2**: localhost:27023
+- **Shard 3**: localhost:27024
 
 ## Cấu trúc dự án
 
 ```
 CT574T_Nhom3/
 ├── bin/
-│   └── www                 # Entry point của ứng dụng
-├── public/                 # Static files (CSS, images, JS)
-│   └── stylesheets/
-│       └── style.css
-├── routes/                 # Route handlers
-│   ├── index.js           # Route chính
-│   └── users.js           # Route cho users
-├── views/                  # Template files
-│   ├── error.jade
-│   ├── index.jade
-│   └── layout.jade
-├── script/                 # MongoDB + Neo4j setup scripts
-│   ├── QUICK_START.md     # DEV environment quick start  
-│   ├── mongodb-cluster/   # MongoDB Sharded Cluster setup
-│   ├── neo4j/            # Neo4j native Windows setup
-│   └── integration/      # MongoDB + Neo4j connection
-├── app.js                  # Cấu hình Express app
-├── package.json           # Dependencies và scripts
-└── README.md              # Tài liệu dự án
+│   └── www                    # Entry point của ứng dụng
+├── public/                    # Static files (CSS, images, JS)
+├── routes/                    # Route handlers
+├── views/                     # Template files (Jade)
+├── docs/                      # Tài liệu setup
+│   ├── DEVELOPMENT_SETUP.md   # Setup development (Docker + Native)
+│   └── PRODUCTION_SETUP.md    # Setup production (4 máy LAN)
+├── script/                    # Utility scripts
+│   ├── mongosh.ps1/.bat      # MongoDB shell wrapper
+│   ├── neo4j/               # Neo4j setup guides
+│   └── production/          # Production documentation
+├── docker-compose.yml        # Docker containers definition
+├── app.js                   # Express app configuration
+├── package.json            # Dependencies
+├── QUICK_START.md          # Quick start guide
+└── README.md              # Tài liệu chính
 ```
 
 ## Scripts có sẵn
@@ -110,18 +136,15 @@ CT574T_Nhom3/
 
 ### Quick Setup Commands
 
-**DEMO Production**: Xem `script/mongodb-cluster/production/windows-production-guide.md`
+**DEMO Production**: Xem `docs/PRODUCTION_SETUP.md`
 
 **DEV Local**: 
-```bash
-# 1. Start Docker containers
-cd script/mongodb-cluster/docker
-docker-compose up mongo-config1 mongo-config2 mongo-config3 mongo-shard1 mongo-shard2 mongo-shard3 -d
-
-# 2. Initialize replica sets và start mongos native 
-# (xem chi tiết trong script/QUICK_START.md)
-
-# 3. Start web app
+```cmd
+# Manual setup (step-by-step control):
+docker-compose up -d
+# Follow detailed steps in docs/DEVELOPMENT_SETUP.md
+# Setup replica sets, sharding, Neo4j
+npm install
 npm start
 ```
 

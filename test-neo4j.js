@@ -1,6 +1,6 @@
 // test-neo4j.js
 // Script để test kết nối Neo4j
-import { connectNeo4j, getNeo4jSession, closeAllConnections } from './config/database.js';
+import { connectNeo4j, getNeo4jSession, closeNeo4jConnection, testNeo4jConnection } from './config/neo4j.js';
 
 async function testNeo4jConnection() {
   try {
@@ -58,7 +58,7 @@ async function testNeo4jConnection() {
     console.log('- Kiểm tra port 7687 không bị chiếm dụng');
     
   } finally {
-    await closeAllConnections();
+    await closeNeo4jConnection();
   }
 }
 
