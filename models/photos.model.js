@@ -1,26 +1,19 @@
-2;
-import { getPhotosConnection } from "../config/database.js";
+import mongoose from "mongoose";
+import { connectMongoPhotos } from "../config/database.js";
 
-const photosConnection = getPhotosConnection();
+const photoConnection = await connectMongoPhotos();
 
-const photoSchema = new photosConnection.Schema(
+const photoSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    url: {
-      type: String,
-      required: true,
-    },
-    description: String,
-    tags: [String],
-    size: Number,
-    format: String,
+    id: { type: String, required: true, unique: true },
+    title: { type: String, required: true },
+    url: { type: String, required: true },
+    description: { type: String, default: "" },
+    uploadedBy: { type: String, default: "Unknown" },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default photosConnection.model("Photo", photoSchema);
+const Photo = photoConnection.model("Photo", photoSchema);
+
+export default Photo;

@@ -4,7 +4,6 @@ import userRoutes from "./photos.js";
 
 const router = express.Router();
 
-// Kết hợp tất cả routes
 router.use("/posts", postRoutes);
 router.use("/users", userRoutes);
 

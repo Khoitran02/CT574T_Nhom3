@@ -1,28 +1,17 @@
 import mongoose from "mongoose";
+import { connectMongoPosts } from "../config/database.js";
+
+const postConnection = await connectMongoPosts();
+
 const postSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    content: {
-      type: String,
-      required: true,
-    },
-    author: {
-      type: String,
-      required: true,
-    },
-    tags: [String],
-    isPublished: {
-      type: Boolean,
-      default: false,
-    },
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    author: { type: String, default: "Anonymous" },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model("Post", postSchema);
+const Post = postConnection.model("Post", postSchema);
+
+export default Post;

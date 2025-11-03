@@ -1,160 +1,51 @@
 import express from "express";
-import { getNeo4jDriver } from "../config/database.js";
+import Photo from "../models/photoModel.js";
 
 const router = express.Router();
 
-// Tạo photo trong Neo4j
-router.post("/", async (req, res) => {
-  const { name, email } = req.body;
-  const driver = getNeo4jDriver();
-  const session = driver.session();
-
-  try {
-    const result = await session.run(
-      `CREATE (p:Photo {
-        id: $id,
-        name: $name,
-        email: $email,
-        createdAt: datetime()
-      }) RETURN p`,
-      {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-      }
-    );
-
-    const photo = result.records[0].get("p").properties;
-
-    res.status(201).json({
-      message: "Tạo photo thành công",
-      data: photo,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi tạo photo",
-      error: err.message,
-    });
-  } finally {
-    await session.close();
-  }
-});
-
-// Lấy tất cả photos từ Neo4j
 router.get("/", async (req, res) => {
-  const driver = getNeo4jDriver();
-  const session = driver.session();
-
   try {
-    const result = await session.run("MATCH (p:Photo) RETURN p");
-    const photos = result.records.map((record) => record.get("p").properties);
+    const photos = await Photo.find();
+    const data = photos.map((p) => ({
+      id: p._id,
+      title: p.title,
+      url: p.url,
+      description: p.description,
+      uploadedBy: p.uploadedBy,
+      createdAt: p.createdAt,
+    }));
 
     res.status(200).json({
-      message: "Lấy dữ liệu photos thành công",
-      data: photos,
+      message: "Lấy danh sách ảnh thành công",
+      data,
+      total: photos.length,
     });
   } catch (err) {
     res.status(500).json({
-      message: "Lỗi khi lấy dữ liệu photos",
+      message: "Lỗi khi lấy dữ liệu ảnh",
       error: err.message,
     });
-  } finally {
-    await session.close();
   }
 });
 
-// Lấy photo theo ID
-router.get("/:id", async (req, res) => {
-  const driver = getNeo4jDriver();
-  const session = driver.session();
-
+router.post("/", async (req, res) => {
   try {
-    const result = await session.run("MATCH (p:Photo {id: $id}) RETURN p", {
-      id: req.params.id,
+    const { title, url, description, uploadedBy } = req.body;
+    const newPhoto = await Photo.create({
+      title,
+      url,
+      description,
+      uploadedBy,
     });
-
-    if (result.records.length === 0) {
-      return res.status(404).json({
-        message: "Không tìm thấy photo",
-      });
-    }
-
-    const photo = result.records[0].get("p").properties;
-
-    res.status(200).json({
-      message: "Lấy photo thành công",
-      data: photo,
+    res.status(201).json({
+      message: "Tải ảnh lên thành công",
+      data: newPhoto,
     });
   } catch (err) {
     res.status(500).json({
-      message: "Lỗi khi lấy photo",
+      message: "Lỗi khi tải ảnh lên",
       error: err.message,
     });
-  } finally {
-    await session.close();
-  }
-});
-
-// Cập nhật photo
-router.put("/:id", async (req, res) => {
-  const { name, email } = req.body;
-  const driver = getNeo4jDriver();
-  const session = driver.session();
-
-  try {
-    const result = await session.run(
-      `MATCH (p:Photo {id: $id})
-       SET p.name = $name, p.email = $email, p.updatedAt = datetime()
-       RETURN p`,
-      {
-        id: req.params.id,
-        name,
-        email,
-      }
-    );
-
-    if (result.records.length === 0) {
-      return res.status(404).json({
-        message: "Không tìm thấy photo",
-      });
-    }
-
-    const photo = result.records[0].get("p").properties;
-
-    res.status(200).json({
-      message: "Cập nhật photo thành công",
-      data: photo,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi cập nhật photo",
-      error: err.message,
-    });
-  } finally {
-    await session.close();
-  }
-});
-
-// Xóa photo
-router.delete("/:id", async (req, res) => {
-  const driver = getNeo4jDriver();
-  const session = driver.session();
-
-  try {
-    const result = await session.run("MATCH (p:Photo {id: $id}) DELETE p", {
-      id: req.params.id,
-    });
-
-    res.status(200).json({
-      message: "Xóa photo thành công",
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi xóa photo",
-      error: err.message,
-    });
-  } finally {
-    await session.close();
   }
 });
 
