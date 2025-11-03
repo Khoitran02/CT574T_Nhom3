@@ -14,16 +14,15 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 - **Máy 1**: Web Application (Node.js) + MongoDB Router (mongos) + Neo4j
 - **Máy 2-4**: MongoDB Sharded Cluster (3 shards)
 
-### Development Environment (Hybrid Local)
-- **Native Windows**: Neo4j + Web App + MongoDB Router (mongos) + Mongo Express
-- **Docker containers**: 3 Shards + 3 Config Servers (mỗi container: 1 Shard + 1 Config)
+### Development Environment (Native Local)
+- **Native Windows**: Neo4j + Web App + MongoDB Cluster (6 mongod processes + 1 mongos)
 
 ## Công nghệ sử dụng
 - **Node.js** - JavaScript runtime environment
 - **Express.js** - Web framework cho Node.js
 - **MongoDB** - Document database với Sharded Cluster
 - **Neo4j** - Graph database cho mối quan hệ
-- **Docker** - Containerization cho môi trường development
+- **PowerShell** - Automation scripts cho MongoDB cluster
 - **Jade** - Template engine
 - **Morgan** - HTTP request logger middleware
 - **Cookie Parser** - Middleware để parse cookies
@@ -38,18 +37,18 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 - Neo4j Desktop/Community 5.15+
 - Windows 10/11, RAM 4GB+
 
-**DEV Local (1 máy hybrid)**:
-- MongoDB Community Server 7.0+ (cho mongos)
+**DEV Local (1 máy native)**:
+- MongoDB Community Server 8.2+ (full installation)
 - Node.js 18.x+
 - Neo4j Desktop 5.15+
-- Docker Desktop
-- Windows 10/11, RAM 8GB+
+- PowerShell 5.1+
+- Windows 10/11, RAM 4GB+
 
 ## 🚀 Hai mô hình triển khai
 
-### 1. **Development** (Docker containers trên 1 máy)
+### 1. **Development** (Native MongoDB trên 1 máy)
 - 📋 **Mục đích**: Development, Testing, Demo, Learning
-- 🔧 **Yêu cầu**: Docker Desktop + Neo4j Desktop  
+- 🔧 **Yêu cầu**: MongoDB Community Server + Neo4j Desktop + PowerShell 5.1+
 - ⏱️ **Setup time**: 5 phút (tự động)
 - 💾 **Tài nguyên**: ~2-3 GB RAM
 - 📖 **Hướng dẫn**: [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)
@@ -71,8 +70,8 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 git clone [repo-url]
 cd CT574T_Nhom3
 
-# Start containers và cấu hình từng bước (10 phút)
-docker-compose up -d
+# Start MongoDB cluster và cấu hình từng bước (5 phút)
+.\script\start-mongodb-cluster.ps1
 # Theo hướng dẫn chi tiết trong docs/DEVELOPMENT_SETUP.md
 
 # Setup Neo4j và start web app
@@ -98,7 +97,7 @@ npm start
 - **MongoDB Router**: mongodb://localhost:27017/socialnetwork
 - **Neo4j Browser**: http://localhost:7474 (neo4j/password123)
 
-**DEV Docker components**:
+**Native MongoDB Cluster components**:
 - **Config Server 1**: localhost:27019
 - **Config Server 2**: localhost:27020
 - **Config Server 3**: localhost:27021  
@@ -116,13 +115,13 @@ CT574T_Nhom3/
 ├── routes/                    # Route handlers
 ├── views/                     # Template files (Jade)
 ├── docs/                      # Tài liệu setup
-│   ├── DEVELOPMENT_SETUP.md   # Setup development (Docker + Native)
+│   ├── DEVELOPMENT_SETUP.md   # Setup development (Native MongoDB)
 │   └── PRODUCTION_SETUP.md    # Setup production (4 máy LAN)
 ├── script/                    # Utility scripts
 │   ├── mongosh.ps1/.bat      # MongoDB shell wrapper
 │   ├── neo4j/               # Neo4j setup guides
 │   └── production/          # Production documentation
-├── docker-compose.yml        # Docker containers definition
+├── script/                    # Automation scripts for MongoDB cluster
 ├── app.js                   # Express app configuration
 ├── package.json            # Dependencies
 ├── QUICK_START.md          # Quick start guide
@@ -139,11 +138,11 @@ CT574T_Nhom3/
 **DEMO Production**: Xem `docs/PRODUCTION_SETUP.md`
 
 **DEV Local**: 
-```cmd
-# Manual setup (step-by-step control):
-docker-compose up -d
+```powershell
+# Quick automated setup:
+.\script\start-mongodb-cluster.ps1
 # Follow detailed steps in docs/DEVELOPMENT_SETUP.md
-# Setup replica sets, sharding, Neo4j
+# Setup sharding, Neo4j, and start application
 npm install
 npm start
 ```
@@ -165,7 +164,7 @@ npm start
 ### DEV Environment Hybrid Design
 - ✅ **Gần giống Production**: mongos và Web App native như production
 - ✅ **Dễ debug**: Có thể debug mongos và web app trực tiếp  
-- ✅ **Performance tốt**: Native components nhanh hơn Docker
+- ✅ **Performance tốt**: Native processes tối ưu cho production
 - ✅ **Flexible**: Restart từng component riêng biệt
 
 ## Tính năng chính

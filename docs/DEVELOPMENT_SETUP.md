@@ -10,7 +10,7 @@ Dành cho: **Development, Testing, Learning MongoDB Sharding**
 ### Tại sao Native MongoDB?
 - **🎯 100% giống Production**: Cùng architecture và commands với production
 - **🔧 Dễ debug**: Tất cả processes native, monitor bằng Task Manager  
-- **⚡ Performance**: Native processes, không có Docker overhead
+- **⚡ Performance**: Native processes, tối ưu cho Windows
 - **🎓 Educational**: Hiểu sâu MongoDB cluster architecture thực tế
 - **🚀 Demo-ready**: Dễ dàng scale lên 3 máy cho demo production
 
@@ -18,7 +18,7 @@ Dành cho: **Development, Testing, Learning MongoDB Sharding**
 - MongoDB Community Server 8.2+ (bao gồm mongod, mongos, mongosh)
 - Neo4j Desktop  
 - Node.js 18+
-- Windows 10/11, RAM 4GB+ (thay vì 8GB như Docker)
+- Windows 10/11, RAM 4GB+
 - PowerShell 5.1+
 
 ---
@@ -199,14 +199,15 @@ Get-Process mongod, mongos -ErrorAction SilentlyContinue | Stop-Process -Force
 .\script\start-mongodb-cluster.ps1
 ```
 
-**2. Container startup issues**
-```cmd
-# Check container logs
-docker logs configsvr1
-docker logs shard1  
+**2. Process startup issues**
+```powershell
+# Check process logs (check data directory for log files)
+Get-Content "data\configsvr1\mongod.log" -Tail 20
+Get-Content "data\shard1\mongod.log" -Tail 20
 
-# Restart specific container
-docker restart configsvr1
+# Restart specific processes (kill and restart cluster)
+.\script\cleanup-mongodb.ps1
+.\script\start-mongodb-cluster.ps1
 ```
 
 **3. Replica set initialization failed**

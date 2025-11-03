@@ -5,8 +5,8 @@
 ### Sau khi setup xong, kiểm tra sharding:
 
 ```cmd
-# 1. Verify containers are running
-docker ps
+# 1. Verify MongoDB processes are running
+Get-Process mongod,mongos -ErrorAction SilentlyContinue
 
 # 2. Check cluster status
 mongosh --port 27017 --eval "sh.status()"
@@ -25,8 +25,8 @@ curl http://localhost:3000
 ```
 
 ### Dấu hiệu sharding hoạt động:
-- ✅ 6 MongoDB containers running
-- ✅ 1 native mongos process running on host
+- ✅ 6 MongoDB processes running (3 config servers + 3 shards)
+- ✅ 1 mongos router process running on port 27017
 - ✅ `sh.status()` shows 3 shards active
 - ✅ `getShardDistribution()` shows data across multiple shards
 - ✅ Web app accessible at localhost:3000
@@ -35,16 +35,16 @@ curl http://localhost:3000
 
 ## 🚀 Chọn mô hình triển khai
 
-### 1. Development (1 máy - Docker + Native)
+### 1. Development (1 máy - Native MongoDB)
 **Dành cho**: Learning, Development, Testing
 
-```cmd
+```powershell
 # Clone project
 git clone [repo-url]
 cd CT574T_Nhom3
 
-# Step-by-step setup (10 phút)
-docker-compose up -d
+# Automated setup (5 phút)
+.\script\start-mongodb-cluster.ps1
 # Follow detailed guide in docs/DEVELOPMENT_SETUP.md
 
 # Setup Neo4j và start app
@@ -72,10 +72,11 @@ npm start
 ## 📋 Yêu cầu hệ thống
 
 ### Development
-- Docker Desktop
+- MongoDB Community Server 8.2+
 - Neo4j Desktop  
 - Node.js 18+
-- Windows 10/11, RAM 8GB+
+- PowerShell 5.1+
+- Windows 10/11, RAM 4GB+
 
 ### Production  
 - 4 máy Windows trong LAN
@@ -103,6 +104,6 @@ mongosh --host 192.168.1.100 --port 27017 --eval "sh.status()"
 # Check web app
 curl http://localhost:3000
 
-# Check containers (development only)
-docker ps
+# Check MongoDB processes (development only)
+Get-Process mongod,mongos -ErrorAction SilentlyContinue
 ```
