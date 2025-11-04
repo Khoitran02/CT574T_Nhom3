@@ -1,52 +1,28 @@
 import express from "express";
-import Photo from "../models/photoModel.js";
+import multer from "multer";
+import Photo from "../models/photos.model.js";
 
-const router = express.Router();
+const Photo_router = express.Router();
 
-router.get("/", async (req, res) => {
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+Photo_router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const photos = await Photo.find();
-    const data = photos.map((p) => ({
-      id: p._id,
-      title: p.title,
-      url: p.url,
-      description: p.description,
-      uploadedBy: p.uploadedBy,
-      createdAt: p.createdAt,
-    }));
+    const { title, description, uploadedBy } = req.body;
+    const imageData = req.file.buffer.toString("base64");
 
-    res.status(200).json({
-      message: "Lấy danh sách ảnh thành công",
-      data,
-      total: photos.length,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi lấy dữ liệu ảnh",
-      error: err.message,
-    });
-  }
-});
-
-router.post("/", async (req, res) => {
-  try {
-    const { title, url, description, uploadedBy } = req.body;
-    const newPhoto = await Photo.create({
+    const newPhoto = new Photo({
       title,
-      url,
       description,
       uploadedBy,
+      imageData: `data:${req.file.mimetype};base64,${imageData}`,
     });
-    res.status(201).json({
-      message: "Tải ảnh lên thành công",
-      data: newPhoto,
-    });
+
+    await newPhoto.save();
+    res.status(201).json({ message: "✅ Lưu ảnh thành công", data: newPhoto });
   } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi tải ảnh lên",
-      error: err.message,
-    });
+    res.status(500).json({ message: "❌ Lỗi khi lưu ảnh", error: err.message });
   }
 });
-
-export default router;
+export default Photo_router;

@@ -4,6 +4,7 @@ import router from "./routes/index.js";
 import {
   connectMongoPosts,
   connectMongoPhotos,
+  connectMongoLocal,
   connectNeo4j,
 } from "./config/database.js";
 
@@ -15,6 +16,7 @@ app.use(express.json());
 const initConnections = async () => {
   await connectMongoPosts();
   await connectMongoPhotos();
+  await connectMongoLocal();
   connectNeo4j();
 };
 initConnections();

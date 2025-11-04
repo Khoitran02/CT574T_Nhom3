@@ -34,6 +34,21 @@ const connectMongoPhotos = async () => {
   }
 };
 
+// MongoDB (Local)
+const connectMongoLocal = async () => {
+  try {
+    const conn = await mongoose
+      .createConnection(
+        `${process.env.MONGO_URI_LOCAL}${process.env.MONGO_DB_LOCAL}?retryWrites=true&w=majority`
+      )
+      .asPromise();
+    console.log("--MongoDB (Local) connected!");
+    return conn;
+  } catch (err) {
+    console.error("MongoDB (Local) connection error:", err.message);
+  }
+};
+
 // Neo4j
 const connectNeo4j = () => {
   try {
@@ -48,4 +63,9 @@ const connectNeo4j = () => {
   }
 };
 
-export { connectMongoPosts, connectMongoPhotos, connectNeo4j };
+export {
+  connectMongoPosts,
+  connectMongoPhotos,
+  connectMongoLocal,
+  connectNeo4j,
+};
