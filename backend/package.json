@@ -9,7 +9,6 @@
     "test-mongodb": "node test-mongodb.js"
   },
   "dependencies": {
-    "concurrently": "^9.2.1",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv": "^17.2.3",

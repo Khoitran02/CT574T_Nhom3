@@ -3,6 +3,7 @@ import express from "express";
 import dotenv from "dotenv";
 import {
   connectAllDatabases,
+  testAllConnections,
   closeAllConnections,
 } from "./config/database.js";
 import routes from "./routes/index.js";
@@ -23,11 +24,27 @@ const initializeDatabases = async () => {
     // Connect all databases
     const connectionResults = await connectAllDatabases();
     
-    // All databases connected successfully
+    // Test all connections
+    const testResults = await testAllConnections();
     
-    console.log('✅ All databases connected successfully!');
+    const successfulConnections = testResults.filter(r => r.status === 'connected');
+    const failedConnections = testResults.filter(r => r.status === 'failed');
     
-    return true;
+    console.log(`✅ ${successfulConnections.length}/${testResults.length} databases connected successfully`);
+    
+    if (failedConnections.length > 0) {
+      console.warn('⚠️  Some databases failed to connect:');
+      failedConnections.forEach(failed => {
+        console.warn(`   - ${failed.database}: ${failed.error}`);
+      });
+    }
+    
+    if (successfulConnections.length === 0) {
+      console.error('❌ No databases connected. Please check configuration.');
+      process.exit(1);
+    }
+    
+    return testResults;
   } catch (error) {
     console.error('❌ Database initialization failed:', error.message);
     process.exit(1);
@@ -35,7 +52,10 @@ const initializeDatabases = async () => {
 };
 
 // Initialize databases
-initializeDatabases();
+let databaseStatus = [];
+initializeDatabases().then((results) => {
+  databaseStatus = results;
+});
 
 // Routes
 app.use("/api", routes);
@@ -46,10 +66,13 @@ app.get("/", (req, res) => {
     status: "OK",
     message: "Social Network API Server",
     project: "CT574T - MongoDB Sharded Cluster + Neo4j",
-    databases: {
-      mongoDB: { status: "connected" },
-      neo4j: { status: "connected" }
-    },
+    databases: databaseStatus.map(db => ({
+      name: db.database,
+      status: db.status,
+      type: db.type || 'unknown',
+      uri: db.uri || 'hidden',
+      message: db.message,
+    })),
     architecture: {
       mongodb: "Native Sharded Cluster (6 mongod + 1 mongos)",
       neo4j: "Local Graph Database",
@@ -60,7 +83,7 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 const startServer = () => {
   app.listen(PORT, () => {

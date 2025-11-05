@@ -147,12 +147,6 @@ npm install
 npm start
 ```
 
-## Thành viên nhóm 4
-- [Tên thành viên 1] - [MSHV] - [Email]
-- [Tên thành viên 2] - [MSHV] - [Email]
-- [Tên thành viên 3] - [MSHV] - [Email]
-- [Tên thành viên 4] - [MSHV] - [Email]
-
 ## Điểm đặc biệt của kiến trúc
 
 ### MongoDB Sharded Cluster với 3 Config Servers

@@ -257,7 +257,7 @@ mongosh --port 27017 --eval "sh.addShard('shard3rs/localhost:27024')"
 .\script\cleanup-mongodb.ps1
 
 # Complete reset using cleanup script (No clear Data)
- .\script\cleanup-mongodb.ps1 -KeepData -Force
+.\script\cleanup-mongodb.ps1 -KeepData -Force
 
 # Fresh restart
 .\script\start-mongodb-cluster.ps1
