@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { getMongoConnection } from "../config/database.js";
 
 const postSchema = new mongoose.Schema(
   {
@@ -39,4 +40,26 @@ const postSchema = new mongoose.Schema(
 postSchema.index({ authorId: 1 });
 postSchema.index({ createdAt: -1 });
 
-export default mongoose.model("Post", postSchema);
+let PostModel = null;
+
+const getPostModel = () => {
+  if (!PostModel) {
+    const connection = getMongoConnection();
+    PostModel = connection.model("Post", postSchema);
+  }
+  return PostModel;
+};
+
+export default new Proxy(function() {}, {
+  get(target, prop) {
+    return getPostModel()[prop];
+  },
+  construct(target, args) {
+    const Model = getPostModel();
+    return new Model(...args);
+  },
+  apply(target, thisArg, args) {
+    return getPostModel()(...args);
+  }
+});
+

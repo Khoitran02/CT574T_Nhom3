@@ -1,5 +1,6 @@
 import express from "express";
 import Post from "../models/posts.model.js";
+import Comment from "../models/comments.model.js";
 import { getNeo4jDriver } from "../config/database.js";
 
 const router = express.Router();
@@ -58,6 +59,55 @@ router.post("/", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Lấy comments của một post - GET /api/posts/:postId/comments
+router.get("/:postId/comments", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const comments = await Comment.find({ 
+      postId, 
+      isVisible: true 
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "Lấy comments thành công",
+      data: comments,
+      total: comments.length,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi khi lấy comments",
+      error: err.message,
+    });
+  }
+});
+
+// Tạo comment mới cho post - POST /api/posts/:postId/comments
+router.post("/:postId/comments", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { content, author, userId } = req.body;
+
+    const newComment = new Comment({
+      content,
+      author,
+      postId,
+      userId,
+    });
+
+    const savedComment = await newComment.save();
+
+    res.status(201).json({
+      message: "Tạo comment thành công",
+      data: savedComment,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi tạo comment", 
+      error: error.message 
+    });
   }
 });
 

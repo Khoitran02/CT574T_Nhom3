@@ -7,13 +7,6 @@ Dành cho: **Development, Testing, Learning MongoDB Sharding**
 - **Native MongoDB**: 6 processes (3 config servers + 3 shards + 1 mongos)
 - **Native Windows**: Web App + Neo4j + MongoDB Cluster
 
-### Tại sao Native MongoDB?
-- **🎯 100% giống Production**: Cùng architecture và commands với production
-- **🔧 Dễ debug**: Tất cả processes native, monitor bằng Task Manager  
-- **⚡ Performance**: Native processes, tối ưu cho Windows
-- **🎓 Educational**: Hiểu sâu MongoDB cluster architecture thực tế
-- **🚀 Demo-ready**: Dễ dàng scale lên 3 máy cho demo production
-
 ### Yêu cầu
 - MongoDB Community Server 8.2+ (bao gồm mongod, mongos, mongosh)
 - Neo4j Desktop  
@@ -138,8 +131,6 @@ mongosh --port 27017 --eval "sh.status()"
 - **Shards**: localhost:27022, 27023, 27024
 - **Router (mongos)**: localhost:27017
 
-> **Native Architecture**: Tất cả MongoDB processes chạy native trên Windows, performance tối ưu và 100% giống production.
-
 ### Test kết nối databases:
 
 ```powershell
@@ -152,16 +143,6 @@ node test-neo4j.js
 # 3. Start web application
 npm start
 ```
-
-### Dấu hiệu thành công:
-- ✅ 7 MongoDB processes đang chạy (6 mongod + 1 mongos)
-- ✅ `sh.status()` hiển thị 3 shards active
-- ✅ `getShardDistribution()` cho thấy dữ liệu phân bố across shards
-- ✅ Web app accessible tại localhost:3000
-- ✅ Neo4j Browser accessible tại localhost:7474
-- ✅ Task Manager hiển thị 7 MongoDB processes
-
-
 
 ---
 
@@ -262,26 +243,6 @@ mongosh --port 27017 --eval "sh.addShard('shard3rs/localhost:27024')"
 # Fresh restart
 .\script\start-mongodb-cluster.ps1
 ```
-
----
-
-## 📋 Development Checklist
-
-- [ ] **MongoDB**: MongoDB Community Server 8.2+ installed
-- [ ] **Project**: Code cloned and dependencies installed  
-- [ ] **Processes**: 7 MongoDB processes running (6 mongod + 1 mongos)
-- [ ] **Replica Sets**: Config and shard replica sets initialized
-- [ ] **Sharding**: Cluster configured and collections sharded
-- [ ] **Neo4j**: Desktop running with socialnetwork database
-- [ ] **Web App**: Application started and accessible
-- [ ] **Testing**: All health checks passing
-
-**Setup Time**: ~5 phút (automated với scripts)
-**Memory Usage**: ~1.5-2 GB RAM (native processes)  
-**Cleanup**: `.\script\cleanup-mongodb.ps1`
-**Benefits**: Native performance, 100% giống production, automated scripts
-
-**Perfect for**: Development, Testing, Learning MongoDB Sharding, Production Demo
 
 ---
 

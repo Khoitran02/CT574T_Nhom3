@@ -6,6 +6,7 @@ import Users from './pages/Users';
 import Posts from './pages/Posts';
 import SocialNetwork from './pages/SocialNetwork';
 import DatabaseStatus from './pages/DatabaseStatus';
+import './App.css';
 
 // Create a client
 const queryClient = new QueryClient({

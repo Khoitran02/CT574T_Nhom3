@@ -1,21 +1,16 @@
 import Navigation from './Navigation';
+import Footer from './Footer';
 
 const Layout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow">
         <div className="px-4 py-6 sm:px-0">
           {children}
         </div>
       </main>
-      <footer className="bg-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-sm text-gray-500">
-            CT574T - Nhóm 3 - MongoDB Sharded Cluster + Neo4j
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

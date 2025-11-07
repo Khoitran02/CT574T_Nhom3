@@ -4,9 +4,6 @@ import { getNeo4jSession } from '../config/database.js';
 
 const router = express.Router();
 
-/**
- * Demo route để test kết nối Neo4j
- */
 router.get('/test', async (req, res) => {
   try {
     const session = getNeo4jSession();

@@ -2,47 +2,56 @@
 ## MongoDB Sharded Cluster + Neo4j – Mạng xã hội mini
 
 ## Mô tả dự án
-Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tán kết hợp MongoDB Sharded Cluster và Neo4j cho ứng dụng mạng xã hội mini. Dự án tập trung chính vào việc cấu hình và quản lý hệ thống cơ sở dữ liệu phân tán, với giao diện web đơn giản để kiểm thử các chức năng CRUD cơ bản.
+Ứng dụng mạng xã hội fullstack với kiến trúc cơ sở dữ liệu phân tán, kết hợp MongoDB Sharded Cluster và Neo4j Graph Database. Dự án tập trung vào việc nghiên cứu và triển khai hệ thống cơ sở dữ liệu phân tán cho ứng dụng thực tế.
 
 ## Kiến trúc hệ thống
-- **MongoDB Sharded Cluster**: Lưu trữ dữ liệu người dùng, bài viết, bình luận
-- **Neo4j**: Quản lý mối quan hệ giữa người dùng (follow, friend)
-- **Node.js Express**: Ứng dụng web API và giao diện
+
+### Frontend
+- **React** - Modern UI library
+- **Vite** - Fast build tool và development server
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Router** - Client-side routing
+- **React Query** - Data fetching và state management
+- **Axios** - HTTP client
+- **Lucide React** - Icon library
+
+### Backend
+- **Node.js + Express** - RESTful API server
+- **Mongoose** - MongoDB ODM
+- **Neo4j Driver** - Graph database client
+- **Morgan** - HTTP request logger
+- **Dotenv** - Environment configuration
+
+### Database
+- **MongoDB Sharded Cluster** - Document storage (Users, Posts, Comments)
+- **Neo4j** - Graph database (User relationships: FOLLOWS)
 
 ## Mô hình triển khai
-### Production Environment (4 máy qua LAN)
-- **Máy 1**: Web Application (Node.js) + MongoDB Router (mongos) + Neo4j
-- **Máy 2-4**: MongoDB Sharded Cluster (3 shards)
 
-### Development Environment (Native Local)
-- **Native Windows**: Neo4j + Web App + MongoDB Cluster (6 mongod processes + 1 mongos)
+### Development Environment (1 máy)
+- **MongoDB Native Cluster**: 6 mongod processes + 1 mongos router
+- **Neo4j Local**: Graph database instance
+- **Frontend Dev Server**: Vite (port 5173)
+- **Backend API Server**: Express (port 3000)
 
-## Công nghệ sử dụng
-- **Node.js** - JavaScript runtime environment
-- **Express.js** - Web framework cho Node.js
-- **MongoDB** - Document database với Sharded Cluster
-- **Neo4j** - Graph database cho mối quan hệ
-- **PowerShell** - Automation scripts cho MongoDB cluster
-- **Jade** - Template engine
-- **Morgan** - HTTP request logger middleware
-- **Cookie Parser** - Middleware để parse cookies
+### Production Environment (4 máy LAN)
+- **Máy 1**: Frontend + Backend API + MongoDB Router (mongos) + Neo4j
+- **Máy 2-4**: MongoDB Sharded Cluster (3 shards với replica sets)
 
-## Cài đặt và chạy dự án
+## Yêu cầu hệ thống
 
-### Yêu cầu hệ thống
+### Development (1 máy)
+- **Windows 10/11** - RAM 4GB+
+- **MongoDB Community Server 8.0+** - Full installation
+- **Neo4j Desktop 5.15+** - Graph database
+- **Node.js 18.x+** - Runtime environment
+- **PowerShell 5.1+** - Script automation
 
-**DEMO Production (4 máy Windows)**:
-- MongoDB Community Server 7.0+
-- Node.js 18.x+  
-- Neo4j Desktop/Community 5.15+
-- Windows 10/11, RAM 4GB+
-
-**DEV Local (1 máy native)**:
-- MongoDB Community Server 8.2+ (full installation)
-- Node.js 18.x+
-- Neo4j Desktop 5.15+
-- PowerShell 5.1+
-- Windows 10/11, RAM 4GB+
+### Production (4 máy LAN)
+- **Windows 10/11** - RAM 4GB+ mỗi máy
+- **MongoDB Community Server 8.0+** - Distributed cluster
+- **Neo4j Community 5.15+** - Graph database
+- **Node.js 18.x+** - Runtime environment
 
 ## 🚀 Hai mô hình triển khai
 
@@ -55,7 +64,7 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 
 ### 2. **Production** (4 máy Windows thực tế)
 - 📋 **Mục đích**: Production environment, High availability
-- � **Yêu cầu**: 4 máy Windows trong cùng LAN
+- 🖥️ **Yêu cầu**: 4 máy Windows trong cùng LAN
 - ⏱️ **Setup time**: 30-45 phút  
 - 💾 **Tài nguyên**: Phân tán trên 4 máy
 - 📖 **Hướng dẫn**: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
@@ -64,165 +73,223 @@ Dự án nghiên cứu và triển khai mô hình cơ sở dữ liệu phân tá
 
 ## ⚡ Quick Start
 
-### Development (1 máy - Hybrid)
-```cmd
-# Clone project
+### Development (Local - 1 máy)
+
+#### 1. Clone và cài đặt dependencies
+```powershell
 git clone [repo-url]
 cd CT574T_Nhom3
 
-# Start MongoDB cluster và cấu hình từng bước (5 phút)
-.\script\start-mongodb-cluster.ps1
-# Theo hướng dẫn chi tiết trong docs/DEVELOPMENT_SETUP.md
+# Cài đặt tất cả dependencies (root + backend + frontend)
+npm run install-all
+```
 
-# Setup Neo4j và start web app
-npm install
-npm start
+#### 2. Khởi động MongoDB Cluster
+```powershell
+# Start MongoDB cluster tự động (6 mongod + 1 mongos)
+.\script\start-mongodb-cluster.ps1
+```
+
+#### 3. Setup Neo4j
+- Mở **Neo4j Desktop**
+- Tạo database mới hoặc start database có sẵn
+- Mặc định: `http://localhost:7474` (neo4j/password123)
+- Cấu hình trong `backend/.env`
+
+#### 4. Khởi động ứng dụng
+```powershell
+# Chạy fullstack (Frontend + Backend)
+npm run dev
 ```
 
 ### Production (4 máy LAN)
-```cmd
-# Setup MongoDB trên tất cả 4 máy
-# Cấu hình từng bước thủ công (30 phút)
-# Theo hướng dẫn chi tiết trong docs/PRODUCTION_SETUP.md
+Chi tiết: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
-# Kết quả: Cluster production-ready
-```
-
-**Chi tiết**: [QUICK_START.md](QUICK_START.md)
-
-### Truy cập các services:
-
-**Native components (cả DEMO & DEV)**:
-- **Web App**: http://localhost:3000  
-- **MongoDB Router**: mongodb://localhost:27017/socialnetwork
-- **Neo4j Browser**: http://localhost:7474 (neo4j/password123)
-
-**Native MongoDB Cluster components**:
-- **Config Server 1**: localhost:27019
-- **Config Server 2**: localhost:27020
-- **Config Server 3**: localhost:27021  
-- **Shard 1**: localhost:27022  
-- **Shard 2**: localhost:27023
-- **Shard 3**: localhost:27024
+### Các URL quan trọng
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000
+- **MongoDB Router**: mongodb://localhost:27017
+- **Neo4j Browser**: http://localhost:7474
 
 ## Cấu trúc dự án
 
 ```
 CT574T_Nhom3/
-├── bin/
-│   └── www                    # Entry point của ứng dụng
-├── public/                    # Static files (CSS, images, JS)
-├── routes/                    # Route handlers
-├── views/                     # Template files (Jade)
-├── docs/                      # Tài liệu setup
-│   ├── DEVELOPMENT_SETUP.md   # Setup development (Native MongoDB)
-│   └── PRODUCTION_SETUP.md    # Setup production (4 máy LAN)
-├── script/                    # Utility scripts
-│   ├── mongosh.ps1/.bat      # MongoDB shell wrapper
-│   ├── neo4j/               # Neo4j setup guides
-│   └── production/          # Production documentation
-├── script/                    # Automation scripts for MongoDB cluster
-├── app.js                   # Express app configuration
-├── package.json            # Dependencies
-├── QUICK_START.md          # Quick start guide
-└── README.md              # Tài liệu chính
+├── frontend/               # React Frontend
+│   ├── src/
+│   │   ├── components/    # React components (UI, Posts, Users, Social)
+│   │   ├── pages/         # Page components (Home, Users, Posts, Network, Database)
+│   │   ├── services/      # API client (axios)
+│   │   └── main.jsx       # Entry point
+│   ├── package.json
+│   └── vite.config.js
+├── backend/               # Node.js Backend
+│   ├── config/           # Database configurations (MongoDB, Neo4j)
+│   ├── models/           # Mongoose schemas (Users, Posts, Comments)
+│   ├── routes/           # API routes
+│   ├── app.js           # Express app
+│   └── package.json
+├── script/               # Automation scripts
+│   ├── start-mongodb-cluster.ps1  # MongoDB cluster startup
+│   └── neo4j/           # Neo4j setup guides
+├── docs/                 # Documentation
+│   ├── DEVELOPMENT_SETUP.md
+│   └── PRODUCTION_SETUP.md
+├── package-fullstack.json  # Root dependencies
+└── README.md
 ```
 
 ## Scripts có sẵn
 
-- `npm start` - Chạy ứng dụng (cần MongoDB và Neo4j sẵn sàng)
-- `npm install` - Cài đặt dependencies
-
-### Quick Setup Commands
-
-**DEMO Production**: Xem `docs/PRODUCTION_SETUP.md`
-
-**DEV Local**: 
 ```powershell
-# Quick automated setup:
-.\script\start-mongodb-cluster.ps1
-# Follow detailed steps in docs/DEVELOPMENT_SETUP.md
-# Setup sharding, Neo4j, and start application
-npm install
-npm start
+# Root scripts
+npm run install-all    # Cài đặt dependencies cho tất cả
+npm run dev           # Chạy fullstack (frontend + backend)
+npm run backend       # Chạy riêng backend
+npm run frontend      # Chạy riêng frontend
+npm run build         # Build production frontend
+npm run test-databases # Test kết nối databases
+
+# Backend scripts (cd backend)
+npm start             # Start backend server
+npm run dev          # Start với nodemon (auto-reload)
+npm run test-mongodb # Test MongoDB connection
+npm run test-neo4j   # Test Neo4j connection
+
+# Frontend scripts (cd frontend)
+npm run dev          # Start dev server (Vite)
+npm run build        # Build production
+npm run preview      # Preview production build
 ```
-
-## Điểm đặc biệt của kiến trúc
-
-### MongoDB Sharded Cluster với 3 Config Servers
-- ✅ **High Availability**: Chịu được 1 Config Server down
-- ✅ **No Single Point of Failure**: Cluster vẫn hoạt động 
-- ✅ **Production Ready**: Tuân thủ MongoDB best practices
-- ✅ **Failover Demo**: Có thể demo khả năng chịu lỗi
-
-### DEV Environment Hybrid Design
-- ✅ **Gần giống Production**: mongos và Web App native như production
-- ✅ **Dễ debug**: Có thể debug mongos và web app trực tiếp  
-- ✅ **Performance tốt**: Native processes tối ưu cho production
-- ✅ **Flexible**: Restart từng component riêng biệt
 
 ## Tính năng chính
-- **Quản lý người dùng**: Đăng ký, đăng nhập, cập nhật thông tin
-- **Quản lý bài viết**: Tạo, sửa, xóa, xem bài viết (MongoDB Sharding)
-- **Hệ thống bình luận**: Bình luận trên bài viết (MongoDB Sharding)
-- **Mối quan hệ người dùng**: Follow/Unfollow, kết bạn (Neo4j Graph DB)
 
-## API Endpoints
-```
-# Users
-GET /users              - Danh sách users
-POST /users             - Tạo user mới
-PUT /users/:id          - Cập nhật user
-DELETE /users/:id       - Xóa user
+### 1. Quản lý người dùng
+- ✅ CRUD operations (Create, Read, Update, Delete)
+- ✅ User profile management
+- ✅ Đồng bộ dữ liệu MongoDB ↔ Neo4j
 
-# Posts
-GET /posts              - Danh sách bài viết
-POST /posts             - Tạo bài viết mới
-PUT /posts/:id          - Cập nhật bài viết
-DELETE /posts/:id       - Xóa bài viết
+### 2. Quản lý bài viết
+- ✅ Tạo, sửa, xóa, xem bài viết
+- ✅ Hệ thống tags
+- ✅ Like/Unlike posts
+- ✅ Data sharding trên MongoDB cluster
 
-# Comments
-GET /posts/:id/comments - Bình luận của bài viết
-POST /posts/:id/comments - Tạo bình luận mới
+### 3. Hệ thống bình luận
+- ✅ Comment trên bài viết
+- ✅ Nested comments support
+- ✅ Sharded storage
 
-# Relationships (Neo4j)
-POST /users/:id/follow  - Follow user
-DELETE /users/:id/follow - Unfollow user
-GET /users/:id/followers - Danh sách followers
-```
+### 4. Mối quan hệ người dùng (Neo4j)
+- ✅ Follow/Unfollow users
+- ✅ Danh sách followers/following
+- ✅ Graph-based relationship queries
+- ✅ Social network visualization
+
+### 5. Database Monitoring
+- ✅ Real-time database status
+- ✅ MongoDB cluster health check
+- ✅ Neo4j connection monitoring
+- ✅ Statistics dashboard
 
 ## Database Schema
 
 ### MongoDB Collections
-- **users**: Thông tin người dùng
-- **posts**: Bài viết của người dùng  
-- **comments**: Bình luận trên bài viết
 
-### Neo4j Nodes & Relationships  
-- **User nodes**: Thông tin cơ bản người dùng (đồng bộ từ MongoDB)
-- **FOLLOWS relationship**: Mối quan hệ follow giữa users
-- **FRIENDS relationship**: Mối quan hệ bạn bè
+**users** - Thông tin người dùng
+```javascript
+{
+  _id: ObjectId,
+  name: String,
+  email: String,
+  age: Number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
-### Data Distribution Strategy
-- **MongoDB Sharding Keys**:
-  - `users` collection: Shard theo `user_id` 
-  - `posts` collection: Shard theo `user_id`
-  - `comments` collection: Shard theo `post_id`
-- **Neo4j**: Tất cả relationships trong 1 graph database
+**posts** - Bài viết
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId,
+  content: String,
+  tags: [String],
+  likes: Number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
-## Đóng góp
-1. Fork dự án
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`)
-4. Push lên branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
+**comments** - Bình luận
+```javascript
+{
+  _id: ObjectId,
+  postId: ObjectId,
+  userId: ObjectId,
+  content: String,
+  createdAt: Date
+}
+```
+
+### Neo4j Graph Schema
+
+**User Nodes**
+```cypher
+(:User {
+  id: String,        // MongoDB _id
+  name: String,
+  email: String
+})
+```
+
+**Relationships**
+```cypher
+(:User)-[:FOLLOWS {since: DateTime}]->(:User)
+```
+
+### Sharding Strategy
+- **users**: Shard key = `_id` (hash-based distribution)
+- **posts**: Shard key = `userId` (posts cùng user trên 1 shard)
+- **comments**: Shard key = `postId` (comments cùng post trên 1 shard)
+
+## Troubleshooting
+
+### MongoDB Cluster không start
+```powershell
+# Kiểm tra processes đang chạy
+Get-Process mongod, mongos
+
+# Stop tất cả MongoDB processes
+Get-Process mongod, mongos | Stop-Process -Force
+
+# Xóa lock files và restart
+.\script\start-mongodb-cluster.ps1
+```
+
+### Neo4j connection failed
+- Kiểm tra Neo4j Desktop đã start database chưa
+- Verify credentials trong `backend/.env`
+- Mặc định: `neo4j://localhost:7687`, user: `neo4j`, password: `password123`
+
+### Frontend không kết nối được Backend
+- Kiểm tra Backend đang chạy: http://localhost:3000
+- Verify CORS settings trong `backend/app.js`
+- Check network tab trong browser DevTools
+
+### Port conflicts
+```powershell
+# Kiểm tra port đang được sử dụng
+netstat -ano | findstr :3000
+netstat -ano | findstr :5173
+netstat -ano | findstr :27017
+
+# Kill process nếu cần
+taskkill /PID <PID> /F
+```
 
 ## License
-Dự án này được phát triển cho mục đích học tập trong môn CT574T.
-
-## Liên hệ
-- Email: [email liên hệ]
-- GitHub: [link GitHub của nhóm]
+Dự án học tập - CT574T Cơ sở dữ liệu nâng cao
 
 ---
-*Dự án được phát triển bởi Nhóm 3 - CT574T Cơ sở dữ liệu nâng cao*
+*Nhóm 3 - CT574T - Thạc sĩ Khoa học máy tính 2025-2027*

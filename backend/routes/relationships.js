@@ -3,11 +3,16 @@ import { getNeo4jSession } from "../config/database.js";
 
 const router = express.Router();
 
-// Follow user
-router.post("/users/:id/follow", async (req, res) => {
+// Follow user - POST /api/relationships/follow
+router.post("/follow", async (req, res) => {
   try {
-    const { id: followeeId } = req.params;
-    const { followerId } = req.body; // ID của user đang follow
+    const { followerId, followeeId } = req.body;
+
+    if (!followerId || !followeeId) {
+      return res.status(400).json({
+        message: "followerId và followeeId là bắt buộc",
+      });
+    }
 
     const session = getNeo4jSession();
 
@@ -43,11 +48,16 @@ router.post("/users/:id/follow", async (req, res) => {
   }
 });
 
-// Unfollow user
-router.delete("/users/:id/follow", async (req, res) => {
+// Unfollow user - POST /api/relationships/unfollow
+router.post("/unfollow", async (req, res) => {
   try {
-    const { id: followeeId } = req.params;
-    const { followerId } = req.body;
+    const { followerId, followeeId } = req.body;
+
+    if (!followerId || !followeeId) {
+      return res.status(400).json({
+        message: "followerId và followeeId là bắt buộc",
+      });
+    }
 
     const session = getNeo4jSession();
 
@@ -84,10 +94,10 @@ router.delete("/users/:id/follow", async (req, res) => {
   }
 });
 
-// Lấy danh sách followers của user
-router.get("/users/:id/followers", async (req, res) => {
+// Lấy danh sách followers của user - GET /api/relationships/followers/:userId
+router.get("/followers/:userId", async (req, res) => {
   try {
-    const { id: userId } = req.params;
+    const { userId } = req.params;
     const session = getNeo4jSession();
 
     const result = await session.run(
@@ -117,10 +127,10 @@ router.get("/users/:id/followers", async (req, res) => {
   }
 });
 
-// Lấy danh sách following của user
-router.get("/users/:id/following", async (req, res) => {
+// Lấy danh sách following của user - GET /api/relationships/following/:userId
+router.get("/following/:userId", async (req, res) => {
   try {
-    const { id: userId } = req.params;
+    const { userId } = req.params;
     const session = getNeo4jSession();
 
     const result = await session.run(
@@ -150,7 +160,104 @@ router.get("/users/:id/following", async (req, res) => {
   }
 });
 
-// Lấy network graph data (for visualization)
+// Check follow status - GET /api/relationships/check/:followerId/:followeeId
+router.get("/check/:followerId/:followeeId", async (req, res) => {
+  try {
+    const { followerId, followeeId } = req.params;
+    const session = getNeo4jSession();
+
+    const result = await session.run(
+      `MATCH (follower:User {id: $followerId})-[r:FOLLOWS]->(followee:User {id: $followeeId})
+       RETURN r`,
+      { followerId, followeeId }
+    );
+
+    await session.close();
+
+    const isFollowing = result.records.length > 0;
+
+    res.status(200).json({
+      message: "Kiểm tra follow status thành công",
+      data: {
+        isFollowing,
+        followerId,
+        followeeId,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi kiểm tra follow status", 
+      error: error.message 
+    });
+  }
+});
+
+// Get mutual friends - GET /api/relationships/mutual/:userId1/:userId2
+router.get("/mutual/:userId1/:userId2", async (req, res) => {
+  try {
+    const { userId1, userId2 } = req.params;
+    const session = getNeo4jSession();
+
+    const result = await session.run(
+      `MATCH (u1:User {id: $userId1})-[:FOLLOWS]->(mutual:User)<-[:FOLLOWS]-(u2:User {id: $userId2})
+       RETURN mutual
+       ORDER BY mutual.name`,
+      { userId1, userId2 }
+    );
+
+    await session.close();
+
+    const mutualFriends = result.records.map(record => record.get('mutual').properties);
+
+    res.status(200).json({
+      message: "Lấy mutual friends thành công",
+      data: mutualFriends,
+      total: mutualFriends.length,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi lấy mutual friends", 
+      error: error.message 
+    });
+  }
+});
+
+// Get user stats - GET /api/relationships/stats/:userId
+router.get("/stats/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const session = getNeo4jSession();
+
+    const result = await session.run(
+      `MATCH (u:User {id: $userId})
+       OPTIONAL MATCH (u)-[:FOLLOWS]->(following)
+       OPTIONAL MATCH (u)<-[:FOLLOWS]-(follower)
+       RETURN count(DISTINCT following) as followingCount,
+              count(DISTINCT follower) as followerCount`,
+      { userId }
+    );
+
+    await session.close();
+
+    const record = result.records[0];
+    const stats = {
+      followers: record?.get('followerCount')?.toNumber() || 0,
+      following: record?.get('followingCount')?.toNumber() || 0,
+    };
+
+    res.status(200).json({
+      message: "Lấy user stats thành công",
+      data: stats,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi lấy user stats", 
+      error: error.message 
+    });
+  }
+});
+
+// Lấy network graph data (for visualization) - GET /api/relationships/network
 router.get("/network", async (req, res) => {
   try {
     const session = getNeo4jSession();

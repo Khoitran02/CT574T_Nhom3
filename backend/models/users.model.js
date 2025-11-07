@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { getMongoConnection } from "../config/database.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -37,4 +38,25 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("User", userSchema);
+let UserModel = null;
+
+const getUserModel = () => {
+  if (!UserModel) {
+    const connection = getMongoConnection();
+    UserModel = connection.model("User", userSchema);
+  }
+  return UserModel;
+};
+
+export default new Proxy(function() {}, {
+  get(target, prop) {
+    return getUserModel()[prop];
+  },
+  construct(target, args) {
+    const Model = getUserModel();
+    return new Model(...args);
+  },
+  apply(target, thisArg, args) {
+    return getUserModel()(...args);
+  }
+});

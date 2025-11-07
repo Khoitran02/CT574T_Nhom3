@@ -27,12 +27,15 @@ router.post("/", async (req, res) => {
   try {
     const { username, email, name, bio, avatar } = req.body;
     
+    console.log('Creating user:', { username, email, name });
+    
     // Kiểm tra user đã tồn tại
     const existingUser = await User.findOne({ 
       $or: [{ username }, { email }] 
     });
     
     if (existingUser) {
+      console.log('User already exists:', existingUser.username);
       return res.status(400).json({
         message: "Username hoặc email đã tồn tại",
       });
@@ -40,6 +43,8 @@ router.post("/", async (req, res) => {
 
     const newUser = new User({ username, email, name, bio, avatar });
     const savedUser = await newUser.save();
+    
+    console.log('User saved to MongoDB:', savedUser._id);
 
     // Tạo user node trong Neo4j
     try {
@@ -63,6 +68,7 @@ router.post("/", async (req, res) => {
       );
       
       await session.close();
+      console.log('User created in Neo4j');
     } catch (neo4jError) {
       console.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
     }
@@ -72,6 +78,7 @@ router.post("/", async (req, res) => {
       data: savedUser,
     });
   } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ 
       message: "Lỗi khi tạo user", 
       error: error.message 
