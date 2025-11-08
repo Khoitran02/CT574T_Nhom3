@@ -32,7 +32,7 @@
 - **MongoDB Native Cluster**: 6 mongod processes + 1 mongos router
 - **Neo4j Local**: Graph database instance
 - **Frontend Dev Server**: Vite (port 5173)
-- **Backend API Server**: Express (port 3000)
+- **Backend API Server**: Express (port 3001)
 
 ### Production Environment (4 máy LAN)
 - **Máy 1**: Frontend + Backend API + MongoDB Router (mongos) + Neo4j
@@ -107,7 +107,7 @@ Chi tiết: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
 ### Các URL quan trọng
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3000
+- **Backend API**: http://localhost:3001
 - **MongoDB Router**: mongodb://localhost:27017
 - **Neo4j Browser**: http://localhost:7474
 
@@ -273,14 +273,14 @@ Get-Process mongod, mongos | Stop-Process -Force
 - Mặc định: `neo4j://localhost:7687`, user: `neo4j`, password: `password123`
 
 ### Frontend không kết nối được Backend
-- Kiểm tra Backend đang chạy: http://localhost:3000
+- Kiểm tra Backend đang chạy: http://localhost:3001
 - Verify CORS settings trong `backend/app.js`
 - Check network tab trong browser DevTools
 
 ### Port conflicts
 ```powershell
 # Kiểm tra port đang được sử dụng
-netstat -ano | findstr :3000
+netstat -ano | findstr :3001
 netstat -ano | findstr :5173
 netstat -ano | findstr :27017
 

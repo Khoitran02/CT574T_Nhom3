@@ -1,7 +1,7 @@
 # Development Setup
 ## 🎯 Mô hình Development: 1 máy Native MongoDB Cluster
 
-Dành cho: **Development, Testing, Learning MongoDB Sharding**
+Dành cho: **Development**
 
 ### Kiến trúc
 - **Native MongoDB**: 6 processes (3 config servers + 3 shards + 1 mongos)
@@ -21,16 +21,21 @@ Dành cho: **Development, Testing, Learning MongoDB Sharding**
 **Cách nhanh nhất - chỉ cần 3 lệnh:**
 ```powershell
 # 1. Right-click PowerShell → "Run as Administrator"
+// Đổi đường dẫn lại tùy theo máy
 cd "D:\Study\ThS_2025-2027\CT574T-Co_so_du_lieu_nang_cao\Source\CT574T_Nhom3"
 
-# 2. Install dependencies
-npm install
-
-# 3. Start MongoDB cluster
+# 2. Start MongoDB cluster
 .\script\start-mongodb-cluster.ps1 -Verbose
-```
 
-> **Script sẽ tự động**: Tạo data directories → Start 7 processes → Configure cluster → Test sharding
+# 3. Start app
+Khởi chạy lần lượt Backend và Frontend
+
+// cd backend
+npm run start
+
+// cd frontend
+npm run dev
+```
 
 ---
 
@@ -56,13 +61,14 @@ mkdir C:\MongoDB-Dev\logs -Force
 ```powershell
 # 1. Right-click PowerShell → "Run as Administrator"
 # 2. Navigate to project directory
+// Đổi đường dẫn lại tùy theo máy
 cd "D:\Study\ThS_2025-2027\CT574T-Co_so_du_lieu_nang_cao\Source\CT574T_Nhom3"
 
 # 3. Start cluster (script sẽ tự động handle conflicts)
 .\script\start-mongodb-cluster.ps1 -Verbose
 ```
 
-**Alternative: Manual conflict resolution**
+**Giải pháp thay thế: Giải quyết xung đột thủ công**
 ```powershell
 # Kiểm tra nếu MongoDB service đang chạy (có thể conflict port 27017)
 Get-Service MongoDB -ErrorAction SilentlyContinue
@@ -75,8 +81,6 @@ net stop MongoDB
 
 # Hoặc thực hiện manual (xem Phụ lục A)
 ```
-
-> **Script sẽ tự động**: Start 6 MongoDB processes → Initialize replica sets → Start mongos → Configure sharding
 
 ### Bước 3: Kiểm tra cluster status (30 giây)
 ```powershell
@@ -96,8 +100,11 @@ mongosh --port 27017 --eval "sh.status()"
 
 ### Bước 5: Khởi động Web App (1 phút)
 ```powershell
-# Start the web application
-npm start
+// cd backend
+npm run start
+
+// cd frontend
+npm run dev
 ```
 
 ---
@@ -132,105 +139,16 @@ mongosh --port 27017 --eval "sh.status()"
 - **Router (mongos)**: localhost:27017
 
 ### Test kết nối databases:
-
+(Chạy ở thư mục backend)
 ```powershell
 # 1. Test MongoDB cluster
-node test-mongodb.js
+npm run test-mongodb
 
 # 2. Test Neo4j connection  
-node test-neo4j.js
-
-# 3. Start web application
-npm start
+npm run test-neo4j
 ```
 
 ---
-
-## �️ Troubleshooting
-
-### Lỗi thường gặp:
-
-**1. Port conflicts (MongoDB Service running)**
-
-**⭐ Best Solution: Run as Administrator**
-```powershell
-# Right-click PowerShell → "Run as Administrator"
-cd "D:\Study\ThS_2025-2027\CT574T-Co_so_du_lieu_nang_cao\Source\CT574T_Nhom3"
-
-# Complete cleanup and restart
-.\script\cleanup-mongodb.ps1 -Force
-.\script\start-mongodb-cluster.ps1 -Verbose
-```
-
-**Manual Resolution:**
-```powershell
-# Check if MongoDB service is running
-Get-Service MongoDB -ErrorAction SilentlyContinue
-
-# Stop MongoDB service (requires Admin rights)
-net stop MongoDB
-
-# Check what's using ports  
-netstat -ano | findstr ":27017 :27019"
-
-# Kill specific processes if needed
-Get-Process mongod, mongos -ErrorAction SilentlyContinue | Stop-Process -Force
-
-# Restart cluster
-.\script\start-mongodb-cluster.ps1
-```
-
-**2. Process startup issues**
-```powershell
-# Check process logs (check data directory for log files)
-Get-Content "data\configsvr1\mongod.log" -Tail 20
-Get-Content "data\shard1\mongod.log" -Tail 20
-
-# Restart specific processes (kill and restart cluster)
-.\script\cleanup-mongodb.ps1
-.\script\start-mongodb-cluster.ps1
-```
-
-**3. Replica set initialization failed**
-```powershell
-# Wait for processes to be ready
-Start-Sleep 30
-
-# Check replica set status
-mongosh --port 27019 --eval "rs.status()"
-mongosh --port 27022 --eval "rs.status()"
-
-# Re-initialize if needed
-mongosh --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'localhost:27019'}, {_id: 1, host: 'localhost:27020'}, {_id: 2, host: 'localhost:27021'}]})"
-```
-
-**4. MongoDB Connection Issues**
-```powershell
-# Check if all MongoDB processes are running
-netstat -ano | findstr ":27019 :27020 :27021 :27022 :27023 :27024"
-Get-Process mongod, mongos -ErrorAction SilentlyContinue
-
-# Verify replica sets status
-mongosh --port 27019 --eval "rs.status()"
-mongosh --port 27022 --eval "rs.status()"
-
-# Check log files for errors
-Get-Content C:\MongoDB-Dev\logs\configsvr1.log -Tail 5
-```
-
-**5. Sharding not working**
-```powershell
-# Check mongos process
-Get-Process mongos -ErrorAction SilentlyContinue
-
-# Verify shards are added
-mongosh --port 27017 --eval "sh.status()"
-
-# Re-add shards if needed  
-mongosh --port 27017 --eval "sh.addShard('shard1rs/localhost:27022')"
-mongosh --port 27017 --eval "sh.addShard('shard2rs/localhost:27023')"
-mongosh --port 27017 --eval "sh.addShard('shard3rs/localhost:27024')"
-```
 
 ### Quick cleanup & restart:
 ```powershell
