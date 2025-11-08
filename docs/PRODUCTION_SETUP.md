@@ -37,7 +37,9 @@ Dành cho: **Production deployment, High availability, Demo thực tế**
 1. **Cài đặt MongoDB**: Download MongoDB Community Server 8.0+ từ mongodb.com
 2. **Tạo thư mục dữ liệu**: 
    ```cmd
-   mkdir C:\data\config
+   mkdir C:\data\config1
+   mkdir C:\data\config2
+   mkdir C:\data\config3
    mkdir C:\data\shard1
    mkdir C:\data\shard2  
    mkdir C:\data\shard3
@@ -45,26 +47,16 @@ Dành cho: **Production deployment, High availability, Demo thực tế**
 3. **Mở Windows Firewall** cho các ports: 27017, 27018, 27019
 4. **Test kết nối**: Ping giữa các máy để đảm bảo connectivity
 
-**Chỉ trên Máy 1:**
-5. Cài đặt Node.js 18+ và Neo4j Desktop
-6. Clone project code: `git clone [repo-url]`
-7. Copy production scripts từ `script\production\` folder
-
 ### Bước 2: Khởi động MongoDB Services (5 phút với automation)
 
-**🤖 Option A: Automated Setup (Recommended)**
-- Copy `start-production-node.ps1` script tới từng máy
-- Chạy script trên từng máy với parameters phù hợp
-- Script sẽ tự động setup MongoDB processes theo role
-
-**📋 Option B: Manual Setup (Educational)**
+**📋Manual Setup (Educational)**
 
 **Khởi động từng service trên từng máy:**
 
 **Máy 2 (192.168.1.101):**
 ```cmd
 # Terminal 1: Config Server 1
-mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config --bind_ip 0.0.0.0
+mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config1 --bind_ip 0.0.0.0
 
 # Terminal 2: Shard 1  
 mongod --shardsvr --replSet shard1rs --port 27018 --dbpath C:\data\shard1 --bind_ip 0.0.0.0
@@ -73,7 +65,7 @@ mongod --shardsvr --replSet shard1rs --port 27018 --dbpath C:\data\shard1 --bind
 **Máy 3 (192.168.1.102):**
 ```cmd  
 # Terminal 1: Config Server 2
-mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config --bind_ip 0.0.0.0
+mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config2 --bind_ip 0.0.0.0
 
 # Terminal 2: Shard 2
 mongod --shardsvr --replSet shard2rs --port 27018 --dbpath C:\data\shard2 --bind_ip 0.0.0.0
@@ -82,7 +74,7 @@ mongod --shardsvr --replSet shard2rs --port 27018 --dbpath C:\data\shard2 --bind
 **Máy 4 (192.168.1.103):**
 ```cmd
 # Terminal 1: Config Server 3  
-mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config --bind_ip 0.0.0.0
+mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config3 --bind_ip 0.0.0.0
 
 # Terminal 2: Shard 3
 mongod --shardsvr --replSet shard3rs --port 27018 --dbpath C:\data\shard3 --bind_ip 0.0.0.0
@@ -90,7 +82,7 @@ mongod --shardsvr --replSet shard3rs --port 27018 --dbpath C:\data\shard3 --bind
 
 > **Lưu ý**: Mỗi lệnh mongod cần chạy trong terminal riêng biệt. Để chạy background, có thể thêm `--logpath` và install MongoDB service.
 
-### Bước 3: Khởi tạo Replica Sets (5 phút)
+### Bước 3: Khởi tạo Replica Sets (5 phút) - Chạy trên Máy 1
 
 **Từ máy bất kỳ có mongosh:**
 
@@ -138,102 +130,26 @@ mongosh --port 27017 --eval "sh.status()"
    - Tạo database mới: `socialnetwork`
    - Set password: `password123` 
    - Start database
-2. **Web Application**:
-   ```cmd
-   cd CT574T_Nhom3
-   npm install
-   npm start
-   ```
-
 ---
 
 ## ✅ Kiểm tra hoạt động
 
-### Dấu hiệu thành công:
-- ✅ 6 MongoDB processes đang chạy (2 trên mỗi máy 2-4)
-- ✅ 1 mongos process trên máy 1
-- ✅ `sh.status()` hiển thị 3 shards active
-- ✅ Web app accessible từ mọi máy trong LAN
-
-### Test commands:
 
 ```cmd
-# Test sharding status từ bất kỳ máy nào
-mongosh --host 192.168.1.100 --port 27017 --eval "sh.status()"
+# 0. Đứng tại thư mục backend
+cd <đường dẫn tới backend>
 
-# Test data distribution
-mongosh --host 192.168.1.100 --port 27017 --eval "
-use socialnetwork
-for(let i=1; i<=30; i++) { 
-  db.testUsers.insertOne({user_id: i, name: 'User'+i}) 
-}
-db.testUsers.getShardDistribution()
-"
+# 1. Test MongoDB cluster
+npm run test-mongodb.js
 
-# Test web application
-curl http://192.168.1.100:3000
+# 2. Test Neo4j connection  
+npm run test-neo4j.js
 ```
 
-### Truy cập services:
-- **Web App**: http://192.168.1.100:3000  
+### Truy cập services (Sửa thành IP Máy 1):
+- **Web App**: http://192.168.1.100:3000
 - **MongoDB Cluster**: mongodb://192.168.1.100:27017/socialnetwork
 - **Neo4j Browser**: http://192.168.1.100:7474 (neo4j/password123)
-
----
-
-## 🛠️ Troubleshooting
-
-### Lỗi phổ biến và cách khắc phục:
-
-**1. Connection refused**
-```cmd
-# Kiểm tra firewall đã tắt hoặc mở ports
-netsh advfirewall set allprofiles state off
-```
-
-**2. Replica set init failed**  
-```cmd
-# Đảm bảo bind_ip 0.0.0.0 và đợi đủ thời gian
-# Restart mongod process nếu cần
-```
-
-**3. Port conflicts**
-```cmd
-# Kiểm tra ports đang sử dụng
-netstat -an | findstr "27017 27018 27019"
-
-# Kill MongoDB processes nếu cần
-taskkill /F /IM mongod.exe
-taskkill /F /IM mongos.exe
-```
-
-**4. Network connectivity**
-```cmd
-# Test ping giữa các máy
-ping 192.168.1.101
-ping 192.168.1.102  
-ping 192.168.1.103
-
-# Test specific port
-telnet 192.168.1.101 27019
-```
-
----
-
-## 📋 Checklist hoàn thành
-
-- [ ] **Môi trường**: 4 máy Windows kết nối LAN 
-- [ ] **MongoDB**: Community Server 8.0+ cài đặt trên tất cả máy
-- [ ] **Network**: Windows Firewall tắt hoặc mở ports 27017-27019
-- [ ] **Data directories**: C:\data\config, C:\data\shard1-3 đã tạo
-- [ ] **Config Servers**: 3 config servers chạy trên port 27019
-- [ ] **Shard Servers**: 3 shard servers chạy trên port 27018
-- [ ] **Replica Sets**: Config RS và Shard RS khởi tạo thành công
-- [ ] **Mongos Router**: Chạy trên Máy 1 port 27017
-- [ ] **Sharding**: Database và collections đã shard
-- [ ] **Neo4j**: Database 'socialnetwork' đang chạy trên Máy 1
-- [ ] **Web App**: Accessible từ mọi máy trong LAN
-- [ ] **Testing**: sh.status() và data distribution hoạt động
 
 ---
 
