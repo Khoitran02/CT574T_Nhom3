@@ -1,28 +1,31 @@
 import express from "express";
-import multer from "multer";
-import Photo from "../models/photos.model.js";
+import { Photo } from "../models/photos.model.js";
 
-const Photo_router = express.Router();
+const router = express.Router();
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-Photo_router.post("/", upload.single("image"), async (req, res) => {
-  try {
-    const { title, description, uploadedBy } = req.body;
-    const imageData = req.file.buffer.toString("base64");
-
-    const newPhoto = new Photo({
-      title,
-      description,
-      uploadedBy,
-      imageData: `data:${req.file.mimetype};base64,${imageData}`,
-    });
-
-    await newPhoto.save();
-    res.status(201).json({ message: "✅ Lưu ảnh thành công", data: newPhoto });
-  } catch (err) {
-    res.status(500).json({ message: "❌ Lỗi khi lưu ảnh", error: err.message });
-  }
+// Lấy danh sách tất cả ảnh
+router.get("/", async (req, res) => {
+  const photos = await Photo.find();
+  res.json(photos);
 });
-export default Photo_router;
+
+// Thêm ảnh mới
+router.post("/", async (req, res) => {
+  const photo = new Photo(req.body);
+  await photo.save();
+  res.json(photo);
+});
+
+// Xem chi tiết ảnh theo id
+router.get("/:id", async (req, res) => {
+  const photo = await Photo.findById(req.params.id);
+  res.json(photo);
+});
+
+// Xoá ảnh
+router.delete("/:id", async (req, res) => {
+  await Photo.findByIdAndDelete(req.params.id);
+  res.json({ message: "Photo deleted" });
+});
+
+export default router;

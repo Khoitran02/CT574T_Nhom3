@@ -1,71 +1,16 @@
 import mongoose from "mongoose";
-import neo4j from "neo4j-driver";
 import dotenv from "dotenv";
-
 dotenv.config();
 
-// MongoDB (Posts)
-const connectMongoPosts = async () => {
+export async function connectMongo() {
   try {
-    const conn = await mongoose
-      .createConnection(
-        `${process.env.MONGO_URI_POSTS}${process.env.MONGO_DB_POST}?retryWrites=true&w=majority`
-      )
-      .asPromise();
-    console.log("--MongoDB (Posts) connected!");
-    return conn;
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("Kết nối MongoDB thành công ✅");
   } catch (err) {
-    console.error("MongoDB (Posts) connection error:", err.message);
+    console.error("Lỗi kết nối MongoDB:", err);
+    process.exit(1);
   }
-};
-
-// MongoDB (Photos)
-const connectMongoPhotos = async () => {
-  try {
-    const conn = await mongoose
-      .createConnection(
-        `${process.env.MONGO_URI_PHOTOS}${process.env.MONGO_DB_PHOTOS}?retryWrites=true&w=majority`
-      )
-      .asPromise();
-    console.log("--MongoDB (Photos) connected!");
-    return conn;
-  } catch (err) {
-    console.error("MongoDB (Photos) connection error:", err.message);
-  }
-};
-
-// MongoDB (Local)
-const connectMongoLocal = async () => {
-  try {
-    const conn = await mongoose
-      .createConnection(
-        `${process.env.MONGO_URI_LOCAL}${process.env.MONGO_DB_LOCAL}?retryWrites=true&w=majority`
-      )
-      .asPromise();
-    console.log("--MongoDB (Local) connected!");
-    return conn;
-  } catch (err) {
-    console.error("MongoDB (Local) connection error:", err.message);
-  }
-};
-
-// Neo4j
-const connectNeo4j = () => {
-  try {
-    const driver = neo4j.driver(
-      process.env.NEO4J_URI,
-      neo4j.auth.basic(process.env.NEO4J_USERNAME, process.env.NEO4J_PASSWORD)
-    );
-    console.log("--Neo4j connected!");
-    return driver;
-  } catch (err) {
-    console.error("Neo4j connection error:", err.message);
-  }
-};
-
-export {
-  connectMongoPosts,
-  connectMongoPhotos,
-  connectMongoLocal,
-  connectNeo4j,
-};
+}
