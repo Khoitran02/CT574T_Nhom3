@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 import { getMongoConnection } from "../config/database.js";
 
+const getTodayUTC7 = () => {
+  const now = new Date();
+  const utc7Time = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  return utc7Time;
+};
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -34,7 +40,9 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: {
+      currentTime: () => getTodayUTC7(),
+    },
   }
 );
 
@@ -48,7 +56,7 @@ const getUserModel = () => {
   return UserModel;
 };
 
-export default new Proxy(function() {}, {
+export default new Proxy(function () {}, {
   get(target, prop) {
     return getUserModel()[prop];
   },
@@ -58,5 +66,5 @@ export default new Proxy(function() {}, {
   },
   apply(target, thisArg, args) {
     return getUserModel()(...args);
-  }
+  },
 });

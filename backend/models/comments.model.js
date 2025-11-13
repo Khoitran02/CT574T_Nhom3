@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 import { getMongoConnection } from "../config/database.js";
 
+const getTodayUTC7 = () => {
+  const now = new Date();
+  const utc7Time = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  return utc7Time;
+};
+
 const commentSchema = new mongoose.Schema(
   {
     content: {
@@ -28,7 +34,9 @@ const commentSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: {
+      currentTime: () => getTodayUTC7(),
+    },
   }
 );
 
