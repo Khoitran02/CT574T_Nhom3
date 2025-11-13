@@ -1,0 +1,19 @@
+{
+  "name": "CT574T_Nhom3",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"yarn dev:be\" \"yarn dev:fe\"",
+    "dev:be": "yarn --cwd backend dev",
+    "dev:fe": "yarn --cwd frontend dev",
+    "start": "concurrently \"yarn start:be\" \"yarn start:fe\"",
+    "start:be": "yarn --cwd backend start",
+    "start:fe": "yarn --cwd frontend start"
+  },
+  "repository": "https://github.com/Khoitran02/CT574T_Nhom3.git",
+  "author": "khoi.tla <khoi.tla>",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

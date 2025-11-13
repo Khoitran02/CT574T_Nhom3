@@ -74,7 +74,7 @@ function Stop-ExistingProcesses {
     try {
         $service = Get-Service MongoDB -ErrorAction SilentlyContinue
         if ($service -and $service.Status -eq "Running") {
-            Write-Warning "MongoDB service is running on default port 27017"
+            Write-Warning "MongoDB service is running on default port 27016"
             Write-Warning "This may conflict with our mongos router"
             Write-Host "   Consider stopping MongoDB service manually or use different ports" -ForegroundColor Yellow
         }
@@ -204,7 +204,7 @@ try {
     
     # Check critical ports
     Write-Step "Checking port availability..."
-    $criticalPorts = @(27017, 27019, 27020, 27021, 27022, 27023, 27024)
+    $criticalPorts = @(27016, 27019, 27020, 27021, 27022, 27023, 27024)
     $conflictPorts = @()
     
     foreach ($port in $criticalPorts) {
@@ -218,9 +218,9 @@ try {
         Write-Host "ERROR: Port conflicts detected!" -ForegroundColor Red
         Write-Host "   Ports in use: $($conflictPorts -join ', ')" -ForegroundColor Red
         
-        if (27017 -in $conflictPorts) {
+        if (27016 -in $conflictPorts) {
             Write-Host ""
-            Write-Host "SOLUTION: MongoDB service is running on port 27017" -ForegroundColor Yellow
+            Write-Host "SOLUTION: MongoDB service is running on port 27016" -ForegroundColor Yellow
             Write-Host "   Option 1: Stop MongoDB service:" -ForegroundColor Yellow
             Write-Host "     net stop MongoDB" -ForegroundColor Gray
             Write-Host "   Option 2: Run as Administrator and use -Force" -ForegroundColor Yellow
@@ -291,24 +291,24 @@ try {
     
     # Step 6: Start mongos Router
     Write-Step "Starting mongos Router..."
-    $mongosArgs = "--configdb `"configrs/localhost:27019,localhost:27020,localhost:27021`" --port 27017 --bind_ip 127.0.0.1 --logpath `"$LogRoot\mongos.log`""
+    $mongosArgs = "--configdb `"configrs/localhost:27019,localhost:27020,localhost:27021`" --port 27016 --bind_ip 127.0.0.1 --logpath `"$LogRoot\mongos.log`""
     Start-MongosProcess $mongosArgs
     Start-Sleep 10
     
     # Wait for mongos to be ready
-    Wait-ForMongo 27017 | Out-Null
+    Wait-ForMongo 27016 | Out-Null
     
     # Step 7: Configure Sharding
     Write-Step "Configuring Sharding..."
     
-    Invoke-MongoCommand 27017 "sh.addShard('shard1rs/localhost:27022')" "Add shard1 to cluster"
-    Invoke-MongoCommand 27017 "sh.addShard('shard2rs/localhost:27023')" "Add shard2 to cluster"
-    Invoke-MongoCommand 27017 "sh.addShard('shard3rs/localhost:27024')" "Add shard3 to cluster"
+    Invoke-MongoCommand 27016 "sh.addShard('shard1rs/localhost:27022')" "Add shard1 to cluster"
+    Invoke-MongoCommand 27016 "sh.addShard('shard2rs/localhost:27023')" "Add shard2 to cluster"
+    Invoke-MongoCommand 27016 "sh.addShard('shard3rs/localhost:27024')" "Add shard3 to cluster"
     
-    Invoke-MongoCommand 27017 "sh.enableSharding('socialnetwork')" "Enable sharding for socialnetwork database"
-    Invoke-MongoCommand 27017 "sh.shardCollection('socialnetwork.users', {user_id: 1})" "Shard users collection"
-    Invoke-MongoCommand 27017 "sh.shardCollection('socialnetwork.posts', {user_id: 1})" "Shard posts collection"
-    Invoke-MongoCommand 27017 "sh.shardCollection('socialnetwork.comments', {post_id: 1})" "Shard comments collection"
+    Invoke-MongoCommand 27016 "sh.enableSharding('socialnetwork')" "Enable sharding for socialnetwork database"
+    Invoke-MongoCommand 27016 "sh.shardCollection('socialnetwork.users', {user_id: 1})" "Shard users collection"
+    Invoke-MongoCommand 27016 "sh.shardCollection('socialnetwork.posts', {user_id: 1})" "Shard posts collection"
+    Invoke-MongoCommand 27016 "sh.shardCollection('socialnetwork.comments', {post_id: 1})" "Shard comments collection"
     
     # Step 8: Final verification
     Write-Step "Final Verification..."
@@ -322,7 +322,7 @@ try {
     $processes | Format-Table Name, Id, WorkingSet, StartTime -AutoSize
     
     Write-Host "Connection Details:" -ForegroundColor White
-    Write-Host "   MongoDB Cluster: mongodb://localhost:27017/socialnetwork" -ForegroundColor Cyan
+    Write-Host "   MongoDB Cluster: mongodb://localhost:27016/socialnetwork" -ForegroundColor Cyan
     Write-Host "   Config Servers:  localhost:27019, 27020, 27021" -ForegroundColor Gray
     Write-Host "   Shards:         localhost:27022, 27023, 27024" -ForegroundColor Gray
     Write-Host ""
@@ -333,12 +333,12 @@ try {
     Write-Host ""
     Write-Host "Management:" -ForegroundColor White
     Write-Host "   Stop cluster:    .\script\cleanup-mongodb.ps1" -ForegroundColor Gray
-    Write-Host "   Check status:    mongosh --port 27017 --eval 'sh.status()'" -ForegroundColor Gray
+    Write-Host "   Check status:    mongosh --port 27016 --eval 'sh.status()'" -ForegroundColor Gray
     Write-Host ""
     
     # Quick test
     Write-Host "Quick Test:" -ForegroundColor White
-    Invoke-MongoCommand 27017 "sh.status()" "Cluster status check" | Out-Null
+    Invoke-MongoCommand 27016 "sh.status()" "Cluster status check" | Out-Null
     
 } catch {
     Write-Host "ERROR during cluster startup: $($_.Exception.Message)" -ForegroundColor Red

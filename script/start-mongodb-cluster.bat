@@ -63,6 +63,6 @@ echo 3. Access: http://localhost:3000
 echo.
 echo Management:
 echo - Stop cluster: cleanup-mongodb.bat  
-echo - Check status: mongosh --port 27017 --eval "sh.status()"
+echo - Check status: mongosh --port 27016 --eval "sh.status()"
 echo.
 pause

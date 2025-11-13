@@ -174,7 +174,7 @@ function Remove-DataDirectories {
 function Test-PortAvailability {
     Write-Step "Checking port availability..."
     
-    $mongoPorts = @(27017, 27019, 27020, 27021, 27022, 27023, 27024)
+    $mongoPorts = @(27016, 27019, 27020, 27021, 27022, 27023, 27024)
     $usedPorts = @()
     
     foreach ($port in $mongoPorts) {

@@ -1,12 +1,15 @@
 # CT574T - Nhóm 3
+
 ## MongoDB Sharded Cluster + Neo4j – Mạng xã hội mini
 
 ## Mô tả dự án
+
 Ứng dụng mạng xã hội fullstack với kiến trúc cơ sở dữ liệu phân tán, kết hợp MongoDB Sharded Cluster và Neo4j Graph Database. Dự án tập trung vào việc nghiên cứu và triển khai hệ thống cơ sở dữ liệu phân tán cho ứng dụng thực tế.
 
 ## Kiến trúc hệ thống
 
 ### Frontend
+
 - **React** - Modern UI library
 - **Vite** - Fast build tool và development server
 - **Tailwind CSS** - Utility-first CSS framework
@@ -16,6 +19,7 @@
 - **Lucide React** - Icon library
 
 ### Backend
+
 - **Node.js + Express** - RESTful API server
 - **Mongoose** - MongoDB ODM
 - **Neo4j Driver** - Graph database client
@@ -23,24 +27,28 @@
 - **Dotenv** - Environment configuration
 
 ### Database
+
 - **MongoDB Sharded Cluster** - Document storage (Users, Posts, Comments)
 - **Neo4j** - Graph database (User relationships: FOLLOWS)
 
 ## Mô hình triển khai
 
 ### Development Environment (1 máy)
+
 - **MongoDB Native Cluster**: 6 mongod processes + 1 mongos router
 - **Neo4j Local**: Graph database instance
 - **Frontend Dev Server**: Vite (port 5173)
-- **Backend API Server**: Express (port 3001)
+- **Backend API Server**: Express (port 3000)
 
 ### Production Environment (4 máy LAN)
+
 - **Máy 1**: Frontend + Backend API + MongoDB Router (mongos) + Neo4j
 - **Máy 2-4**: MongoDB Sharded Cluster (3 shards với replica sets)
 
 ## Yêu cầu hệ thống
 
 ### Development (1 máy)
+
 - **Windows 10/11** - RAM 4GB+
 - **MongoDB Community Server 8.0+** - Full installation
 - **Neo4j Desktop 5.15+** - Graph database
@@ -48,6 +56,7 @@
 - **PowerShell 5.1+** - Script automation
 
 ### Production (4 máy LAN)
+
 - **Windows 10/11** - RAM 4GB+ mỗi máy
 - **MongoDB Community Server 8.0+** - Distributed cluster
 - **Neo4j Community 5.15+** - Graph database
@@ -56,6 +65,7 @@
 ## 🚀 Hai mô hình triển khai
 
 ### 1. **Development** (Native MongoDB trên 1 máy)
+
 - 📋 **Mục đích**: Development, Testing, Demo, Learning
 - 🔧 **Yêu cầu**: MongoDB Community Server + Neo4j Desktop + PowerShell 5.1+
 - ⏱️ **Setup time**: 5 phút (tự động)
@@ -63,9 +73,10 @@
 - 📖 **Hướng dẫn**: [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)
 
 ### 2. **Production** (4 máy Windows thực tế)
+
 - 📋 **Mục đích**: Production environment, High availability
 - 🖥️ **Yêu cầu**: 4 máy Windows trong cùng LAN
-- ⏱️ **Setup time**: 30-45 phút  
+- ⏱️ **Setup time**: 30-45 phút
 - 💾 **Tài nguyên**: Phân tán trên 4 máy
 - 📖 **Hướng dẫn**: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
@@ -76,6 +87,7 @@
 ### Development (Local - 1 máy)
 
 #### 1. Clone và cài đặt dependencies
+
 ```powershell
 git clone [repo-url]
 cd CT574T_Nhom3
@@ -85,30 +97,35 @@ npm run install-all
 ```
 
 #### 2. Khởi động MongoDB Cluster
+
 ```powershell
 # Start MongoDB cluster tự động (6 mongod + 1 mongos)
 .\script\start-mongodb-cluster.ps1
 ```
 
 #### 3. Setup Neo4j
+
 - Mở **Neo4j Desktop**
 - Tạo database mới hoặc start database có sẵn
 - Mặc định: `http://localhost:7474` (neo4j/password123)
 - Cấu hình trong `backend/.env`
 
 #### 4. Khởi động ứng dụng
+
 ```powershell
 # Chạy fullstack (Frontend + Backend)
 npm run dev
 ```
 
 ### Production (4 máy LAN)
+
 Chi tiết: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
 ### Các URL quan trọng
+
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3001
-- **MongoDB Router**: mongodb://localhost:27017
+- **Backend API**: http://localhost:3000
+- **MongoDB Router**: mongodb://localhost:27016
 - **Neo4j Browser**: http://localhost:7474
 
 ## Cấu trúc dự án
@@ -165,28 +182,33 @@ npm run preview      # Preview production build
 ## Tính năng chính
 
 ### 1. Quản lý người dùng
+
 - ✅ CRUD operations (Create, Read, Update, Delete)
 - ✅ User profile management
 - ✅ Đồng bộ dữ liệu MongoDB ↔ Neo4j
 
 ### 2. Quản lý bài viết
+
 - ✅ Tạo, sửa, xóa, xem bài viết
 - ✅ Hệ thống tags
 - ✅ Like/Unlike posts
 - ✅ Data sharding trên MongoDB cluster
 
 ### 3. Hệ thống bình luận
+
 - ✅ Comment trên bài viết
 - ✅ Nested comments support
 - ✅ Sharded storage
 
 ### 4. Mối quan hệ người dùng (Neo4j)
+
 - ✅ Follow/Unfollow users
 - ✅ Danh sách followers/following
 - ✅ Graph-based relationship queries
 - ✅ Social network visualization
 
 ### 5. Database Monitoring
+
 - ✅ Real-time database status
 - ✅ MongoDB cluster health check
 - ✅ Neo4j connection monitoring
@@ -197,6 +219,7 @@ npm run preview      # Preview production build
 ### MongoDB Collections
 
 **users** - Thông tin người dùng
+
 ```javascript
 {
   _id: ObjectId,
@@ -209,6 +232,7 @@ npm run preview      # Preview production build
 ```
 
 **posts** - Bài viết
+
 ```javascript
 {
   _id: ObjectId,
@@ -222,6 +246,7 @@ npm run preview      # Preview production build
 ```
 
 **comments** - Bình luận
+
 ```javascript
 {
   _id: ObjectId,
@@ -235,6 +260,7 @@ npm run preview      # Preview production build
 ### Neo4j Graph Schema
 
 **User Nodes**
+
 ```cypher
 (:User {
   id: String,        // MongoDB _id
@@ -244,11 +270,13 @@ npm run preview      # Preview production build
 ```
 
 **Relationships**
+
 ```cypher
 (:User)-[:FOLLOWS {since: DateTime}]->(:User)
 ```
 
 ### Sharding Strategy
+
 - **users**: Shard key = `_id` (hash-based distribution)
 - **posts**: Shard key = `userId` (posts cùng user trên 1 shard)
 - **comments**: Shard key = `postId` (comments cùng post trên 1 shard)
@@ -256,6 +284,7 @@ npm run preview      # Preview production build
 ## Troubleshooting
 
 ### MongoDB Cluster không start
+
 ```powershell
 # Kiểm tra processes đang chạy
 Get-Process mongod, mongos
@@ -268,28 +297,33 @@ Get-Process mongod, mongos | Stop-Process -Force
 ```
 
 ### Neo4j connection failed
+
 - Kiểm tra Neo4j Desktop đã start database chưa
 - Verify credentials trong `backend/.env`
-- Mặc định: `neo4j://localhost:7687`, user: `neo4j`, password: `password123`
+- Mặc định: `neo4j://localhost:7687`, user: `neo4j`, password: `pass1234`
 
 ### Frontend không kết nối được Backend
-- Kiểm tra Backend đang chạy: http://localhost:3001
+
+- Kiểm tra Backend đang chạy: http://localhost:3000
 - Verify CORS settings trong `backend/app.js`
 - Check network tab trong browser DevTools
 
 ### Port conflicts
+
 ```powershell
 # Kiểm tra port đang được sử dụng
-netstat -ano | findstr :3001
+netstat -ano | findstr :3000
 netstat -ano | findstr :5173
-netstat -ano | findstr :27017
+netstat -ano | findstr :27016
 
 # Kill process nếu cần
 taskkill /PID <PID> /F
 ```
 
 ## License
+
 Dự án học tập - CT574T Cơ sở dữ liệu nâng cao
 
 ---
-*Nhóm 3 - CT574T - Thạc sĩ Khoa học máy tính 2025-2027*
+
+_Nhóm 3 - CT574T - Thạc sĩ Khoa học máy tính 2025-2027_

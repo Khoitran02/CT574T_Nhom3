@@ -17,8 +17,8 @@ if ($mongoProcesses.Count -lt 7) {
 # Check if backend is running
 Write-Host "🔧 Checking backend server..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:3001" -TimeoutSec 3 -ErrorAction Stop
-    Write-Host "✅ Backend server is already running on port 3001" -ForegroundColor Green
+    $response = Invoke-WebRequest -Uri "http://localhost:3000" -TimeoutSec 3 -ErrorAction Stop
+    Write-Host "✅ Backend server is already running on port 3000" -ForegroundColor Green
 } catch {
     Write-Host "⚡ Starting backend server..." -ForegroundColor Yellow
     Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "cd backend; npm start" -WindowStyle Normal
@@ -43,9 +43,9 @@ Write-Host ""
 Write-Host "🎉 CT574T Social Network Application Setup Complete!" -ForegroundColor Green
 Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host "📱 Frontend (React):     http://localhost:5173" -ForegroundColor Yellow  
-Write-Host "🔧 Backend API:          http://localhost:3001" -ForegroundColor Yellow
+Write-Host "🔧 Backend API:          http://localhost:3000" -ForegroundColor Yellow
 Write-Host "📊 Database Status:      http://localhost:5173/database" -ForegroundColor Yellow
-Write-Host "🗄️  MongoDB Router:      mongodb://localhost:27017" -ForegroundColor Yellow
+Write-Host "🗄️  MongoDB Router:      mongodb://localhost:27016" -ForegroundColor Yellow
 Write-Host "📈 Neo4j Browser:        http://localhost:7474" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "💡 Tips:" -ForegroundColor Cyan
