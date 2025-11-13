@@ -18,7 +18,8 @@ const commentSchema = new mongoose.Schema(
       required: true,
     },
     userId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: false,
     },
     isVisible: {
@@ -41,7 +42,7 @@ const getCommentModel = () => {
   return CommentModel;
 };
 
-export default new Proxy(function() {}, {
+export default new Proxy(function () {}, {
   get(target, prop) {
     return getCommentModel()[prop];
   },
@@ -51,5 +52,5 @@ export default new Proxy(function() {}, {
   },
   apply(target, thisArg, args) {
     return getCommentModel()(...args);
-  }
+  },
 });
