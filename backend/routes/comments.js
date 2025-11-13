@@ -71,27 +71,24 @@ router.post("/:postId", async (req, res) => {
     let neo4jError = null;
 
     try {
-      // Tạo node comment và quan hệ trong Neo4j
       await session.run(
         `MATCH (u:User {id: $userId}), (p:Post {id: $postId})
          CREATE (u)-[:COMMENTED]->(c:Comment {id: $commentId, content: $content, author: $author, createdAt: datetime()})-[:ON_POST]->(p)`,
         {
           userId: savedComment.userId.toString(),
           postId: savedComment.postId.toString(),
-          commentId: savedComment._id.toString(), // ID của comment từ MongoDB
+          commentId: savedComment._id.toString(),
           content,
           author,
         }
       );
     } catch (error) {
-      neo4jError = error; // Lưu lỗi Neo4j nếu có
+      neo4jError = error;
       console.error("Error creating relationship in Neo4j:", error.message);
     } finally {
-      // Đóng session Neo4j
       await session.close();
     }
 
-    // Nếu có lỗi trong Neo4j, trả về lỗi
     if (neo4jError) {
       return res.status(500).json({
         message: "Lỗi khi tạo quan hệ trong Neo4j",
