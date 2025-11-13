@@ -50,7 +50,7 @@ const getPostModel = () => {
   return PostModel;
 };
 
-export default new Proxy(function() {}, {
+export default new Proxy(function () {}, {
   get(target, prop) {
     return getPostModel()[prop];
   },
@@ -60,6 +60,5 @@ export default new Proxy(function() {}, {
   },
   apply(target, thisArg, args) {
     return getPostModel()(...args);
-  }
+  },
 });
-

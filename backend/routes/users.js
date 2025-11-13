@@ -7,8 +7,10 @@ const router = express.Router();
 // Lấy tất cả users
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find({ isActive: true }).select('-__v').sort({ createdAt: -1 });
-    
+    const users = await User.find({ isActive: true })
+      .select("-__v")
+      .sort({ createdAt: -1 });
+
     res.status(200).json({
       message: "Lấy danh sách users thành công",
       data: users,
@@ -26,16 +28,16 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { username, email, name, bio, avatar } = req.body;
-    
-    console.log('Creating user:', { username, email, name });
-    
+
+    console.log("  user:", { username, email, name });
+
     // Kiểm tra user đã tồn tại
-    const existingUser = await User.findOne({ 
-      $or: [{ username }, { email }] 
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
     });
-    
+
     if (existingUser) {
-      console.log('User already exists:', existingUser.username);
+      console.log("User already exists:", existingUser.username);
       return res.status(400).json({
         message: "Username hoặc email đã tồn tại",
       });
@@ -43,14 +45,14 @@ router.post("/", async (req, res) => {
 
     const newUser = new User({ username, email, name, bio, avatar });
     const savedUser = await newUser.save();
-    
-    console.log('User saved to MongoDB:', savedUser._id);
+
+    console.log("User saved to MongoDB:", savedUser._id);
 
     // Tạo user node trong Neo4j
     try {
       const driver = getNeo4jDriver();
       const session = driver.session();
-      
+
       await session.run(
         `CREATE (u:User {
           id: $id,
@@ -66,11 +68,11 @@ router.post("/", async (req, res) => {
           name: savedUser.name,
         }
       );
-      
+
       await session.close();
-      console.log('User created in Neo4j');
+      console.log("User created in Neo4j");
     } catch (neo4jError) {
-      console.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+      console.warn("⚠️ Neo4j user creation failed:", neo4jError.message);
     }
 
     res.status(201).json({
@@ -78,10 +80,10 @@ router.post("/", async (req, res) => {
       data: savedUser,
     });
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ 
-      message: "Lỗi khi tạo user", 
-      error: error.message 
+    console.error("Error creating user:", error);
+    res.status(500).json({
+      message: "Lỗi khi tạo user",
+      error: error.message,
     });
   }
 });
@@ -89,8 +91,8 @@ router.post("/", async (req, res) => {
 // Lấy user theo ID
 router.get("/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-__v');
-    
+    const user = await User.findById(req.params.id).select("-__v");
+
     if (!user) {
       return res.status(404).json({
         message: "User không tồn tại",
@@ -102,9 +104,9 @@ router.get("/:id", async (req, res) => {
       data: user,
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: "Lỗi khi lấy thông tin user", 
-      error: error.message 
+    res.status(500).json({
+      message: "Lỗi khi lấy thông tin user",
+      error: error.message,
     });
   }
 });
@@ -113,12 +115,12 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { name, bio, avatar } = req.body;
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { name, bio, avatar },
       { new: true, runValidators: true }
-    ).select('-__v');
+    ).select("-__v");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -130,7 +132,7 @@ router.put("/:id", async (req, res) => {
     try {
       const driver = getNeo4jDriver();
       const session = driver.session();
-      
+
       await session.run(
         `MATCH (u:User {id: $id})
          SET u.name = $name
@@ -140,10 +142,10 @@ router.put("/:id", async (req, res) => {
           name: updatedUser.name,
         }
       );
-      
+
       await session.close();
     } catch (neo4jError) {
-      console.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+      console.warn("⚠️ Neo4j user update failed:", neo4jError.message);
     }
 
     res.status(200).json({
@@ -151,9 +153,9 @@ router.put("/:id", async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: "Lỗi khi cập nhật user", 
-      error: error.message 
+    res.status(500).json({
+      message: "Lỗi khi cập nhật user",
+      error: error.message,
     });
   }
 });
@@ -178,9 +180,9 @@ router.delete("/:id", async (req, res) => {
       data: deletedUser,
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: "Lỗi khi xóa user", 
-      error: error.message 
+    res.status(500).json({
+      message: "Lỗi khi xóa user",
+      error: error.message,
     });
   }
 });
