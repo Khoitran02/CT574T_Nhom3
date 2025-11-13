@@ -50,7 +50,29 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
-// Tạo comment mới cho post - POST /api/posts/:postId/comments
+// Lấy comments của một post - GET /api/comments/:postId
+router.get("/:postId", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const comments = await Comment.find({
+      postId,
+      isVisible: true,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "Lấy comments thành công",
+      data: comments,
+      total: comments.length,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi khi lấy comments",
+      error: err.message,
+    });
+  }
+});
+
+// Tạo comment mới cho post - POST /api/comments/:postId
 router.post("/:postId", async (req, res) => {
   try {
     const { postId } = req.params;

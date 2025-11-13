@@ -61,26 +61,4 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Lấy comments của một post - GET /api/posts/:postId/comments
-router.get("/:postId/comments", async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const comments = await Comment.find({
-      postId,
-      isVisible: true,
-    }).sort({ createdAt: -1 });
-
-    res.status(200).json({
-      message: "Lấy comments thành công",
-      data: comments,
-      total: comments.length,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi lấy comments",
-      error: err.message,
-    });
-  }
-});
-
 export default router;
