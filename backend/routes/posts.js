@@ -1,7 +1,7 @@
 import express from "express";
 import Post from "../models/posts.model.js";
 import Comment from "../models/comments.model.js";
-import { getNeo4jDriver } from "../config/database.js";
+import { getNeo4jSession } from "../config/database.js";
 
 const router = express.Router();
 
@@ -38,8 +38,7 @@ router.post("/", async (req, res) => {
 
     // Tạo quan hệ trong Neo4j nếu có userId
     if (req.body.userId) {
-      const driver = getNeo4jDriver();
-      const session = driver.session();
+      const session = getNeo4jSession();
 
       await session.run(
         `MATCH (u:User {id: $userId}) 
