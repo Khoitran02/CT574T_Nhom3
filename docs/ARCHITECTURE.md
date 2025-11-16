@@ -37,9 +37,9 @@
 **Đặc điểm:**
 - ✅ Dễ setup (1 script chạy xong)
 - ✅ Test sharding logic
-- ✅ Test replica set failover (node level)
-- ❌ **KHÔNG thể test machine-level failover**
-- ❌ Tắt shard1 (cả 3 nodes) → **Mất toàn bộ data shard1**
+- ✅ Test failover bằng "máy ảo" (gộp nodes theo máy)
+- ✅ Giả lập production: Tắt 1 máy ảo → Mỗi shard còn 2/3 nodes
+- ⚠️ Tất cả processes trên cùng 1 máy vật lý (không phải HA thật)
 
 **Ports:**
 - Config: 27019, 27020, 27021
@@ -81,32 +81,53 @@
 
 ---
 
-## 🔍 Tại sao Production khác Local?
+## 🔍 Khác biệt chính: Phân tán Nodes
 
-### Câu hỏi: "Tắt shard1 thì sao không connect được replica set?"
+### Local vs Production - Cách phân bố nodes
 
-**Trong Local:**
+**Local (Giả lập bằng "Máy ảo"):**
 ```
-Shard1-RS:
-├── Node1 (port 27022) ◄── Cùng máy
-├── Node2 (port 27023) ◄── Cùng máy
-└── Node3 (port 27024) ◄── Cùng máy
+Máy ảo 1 (processes):  Config1 + Shard1-N1 + Shard2-N1 + Shard3-N1
+Máy ảo 2 (processes):  Config2 + Shard1-N2 + Shard2-N2 + Shard3-N2
+Máy ảo 3 (processes):  Config3 + Shard1-N3 + Shard2-N3 + Shard3-N3
 
-→ Tắt cả 3 nodes → MongoDB không tìm thấy PRIMARY
-→ Error: "Could not find host matching read preference"
+→ Tắt "Máy ảo 1" (4 processes) → Mỗi shard còn 2/3 nodes → ✅ Data OK
+→ NHƯNG: Tất cả trên 1 máy vật lý → Máy chết = mất hết
 ```
 
-**Trong Production:**
+**Production (Phân tán thật):**
 ```
-Shard1-RS:
-├── Node1 (Máy 2, port 27022) ◄── Tắt Máy 2
-├── Node2 (Máy 3, port 27023) ◄── VẪN HOẠT ĐỘNG
-└── Node3 (Máy 4, port 27024) ◄── VẪN HOẠT ĐỘNG
+Máy 2 (vật lý):  Config1 + Shard1-N1 + Shard2-N1 + Shard3-N1
+Máy 3 (vật lý):  Config2 + Shard1-N2 + Shard2-N2 + Shard3-N2
+Máy 4 (vật lý):  Config3 + Shard1-N3 + Shard2-N3 + Shard3-N3
 
-→ Tắt Máy 2 → Còn 2/3 nodes
-→ Node2 hoặc Node3 trở thành PRIMARY
-→ Data vẫn accessible!
+→ Tắt Máy 2 → Mỗi shard còn 2/3 nodes → ✅ Data OK
+→ Máy 3, 4 vẫn chạy → True High Availability
 ```
+
+### Ví dụ: Tắt 1 máy
+
+**Shard1-RS trong Local:**
+```
+Node1 (port 27022) ◄── Process 1 trên máy local
+Node2 (port 27023) ◄── Process 2 trên máy local  
+Node3 (port 27024) ◄── Process 3 trên máy local
+
+Tắt "Máy ảo 1" (stop process port 27022):
+→ Shard1 còn Node2 + Node3 → ✅ OK
+```
+
+**Shard1-RS trong Production:**
+```
+Node1 (Máy 2, port 27022) ◄── Máy vật lý riêng
+Node2 (Máy 3, port 27023) ◄── Máy vật lý riêng
+Node3 (Máy 4, port 27024) ◄── Máy vật lý riêng
+
+Tắt Máy 2:
+→ Shard1 còn Node2 (Máy 3) + Node3 (Máy 4) → ✅ OK
+```
+
+**Behavior giống nhau** - Đều mô phỏng tắt 1 trong 3 "máy"
 
 ---
 
