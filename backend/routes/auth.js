@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/neo4j.js";
+import logger from "../config/logger.js";
 
 const router = express.Router();
 
@@ -66,7 +67,7 @@ router.post("/register", async (req, res) => {
 
         await session.close();
       } catch (neo4jError) {
-        console.warn("⚠️ Neo4j user creation failed:", neo4jError.message);
+        logger.warn("⚠️ Neo4j user creation failed:", neo4jError.message);
       }
     }
 
@@ -79,7 +80,7 @@ router.post("/register", async (req, res) => {
       data: userResponse,
     });
   } catch (error) {
-    console.error("Error in register:", error);
+    logger.error("Error in register:", error);
     res.status(500).json({
       message: "Lỗi khi đăng ký",
       error: error.message,
@@ -125,7 +126,7 @@ router.post("/login", async (req, res) => {
       data: userResponse,
     });
   } catch (error) {
-    console.error("Error in login:", error);
+    logger.error("Error in login:", error);
     res.status(500).json({
       message: "Lỗi khi đăng nhập",
       error: error.message,
@@ -205,7 +206,7 @@ router.post("/change-password", async (req, res) => {
       message: "Đổi mật khẩu thành công",
     });
   } catch (error) {
-    console.error("Error in change-password:", error);
+    logger.error("Error in change-password:", error);
     res.status(500).json({
       message: "Lỗi khi đổi mật khẩu",
       error: error.message,

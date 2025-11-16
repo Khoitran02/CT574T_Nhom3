@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import User from "../models/users.model.js";
+import logger from "../config/logger.js";
 
 const router = express.Router();
 
@@ -48,7 +49,7 @@ router.post("/admin", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error creating admin:", error);
+    logger.error("Error creating admin:", error);
     res.status(500).json({
       message: "Lỗi khi tạo admin user",
       error: error.message,

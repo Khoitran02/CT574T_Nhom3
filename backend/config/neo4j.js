@@ -1,5 +1,6 @@
 import neo4j from 'neo4j-driver';
 import dotenv from 'dotenv';
+import logger from './logger.js';
 
 dotenv.config();
 
@@ -24,15 +25,15 @@ export const connectNeo4j = async () => {
 
     const session = neo4jDriver.session({ database });
     const result = await session.run('RETURN "Connected to Neo4j!" AS message');
-    console.log('Neo4j:', result.records[0].get('message'));
-    console.log(`Neo4j database: ${database}`);
+    logger.info('Neo4j:', result.records[0].get('message'));
+    logger.info(`Neo4j database: ${database}`);
     
     await createNeo4jConstraints(session);
     await session.close();
     
     return neo4jDriver;
   } catch (error) {
-    console.error('Neo4j connection failed:', error.message);
+    logger.error('Neo4j connection failed:', error.message);
     throw error;
   }
 };
@@ -55,7 +56,7 @@ const createNeo4jConstraints = async (session) => {
     `);
 
   } catch (error) {
-    console.warn('Warning creating Neo4j constraints:', error.message);
+    logger.warn('Warning creating Neo4j constraints:', error.message);
   }
 };
 
@@ -76,11 +77,11 @@ export const closeNeo4jConnection = async () => {
   try {
     if (neo4jDriver) {
       await neo4jDriver.close();
-      console.log('Neo4j connection closed');
+      logger.info('Neo4j connection closed');
       neo4jDriver = null;
     }
   } catch (error) {
-    console.error('Error closing Neo4j connection:', error);
+    logger.error('Error closing Neo4j connection:', error);
   }
 };
 
@@ -106,7 +107,7 @@ export const testNeo4jConnection = async () => {
       database: process.env.NEO4J_DATABASE || 'socialnetwork'
     };
   } catch (error) {
-    console.error('Neo4j connection test failed:', error.message);
+    logger.error('Neo4j connection test failed:', error.message);
     throw error;
   }
 };
@@ -179,7 +180,7 @@ export const neo4jUtils = {
         relationshipCount: relationshipCountResult.records[0]?.get('relationshipCount').toNumber() || 0
       };
     } catch (error) {
-      console.error('Error getting Neo4j database stats:', error);
+      logger.error('Error getting Neo4j database stats:', error);
       return null;
     }
   }

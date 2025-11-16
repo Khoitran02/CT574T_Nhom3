@@ -18,7 +18,9 @@
     "jade": "~1.11.0",
     "mongoose": "^8.19.2",
     "morgan": "~1.9.1",
-    "neo4j-driver": "^6.0.0"
+    "neo4j-driver": "^6.0.0",
+    "winston": "^3.18.3",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "main": "app.js",
   "type": "module",

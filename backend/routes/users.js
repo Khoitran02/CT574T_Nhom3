@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/database.js";
+import logger from "../config/logger.js";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post("/", async (req, res) => {
   try {
     const { username, email, name, bio, avatar, role } = req.body;
     
-    console.log('Creating user:', { username, email, name, role });
+    logger.info('Creating user:', { username, email, name, role });
     
     // Kiểm tra user đã tồn tại
     const existingUser = await User.findOne({ 
@@ -35,7 +36,7 @@ router.post("/", async (req, res) => {
     });
     
     if (existingUser) {
-      console.log('User already exists:', existingUser.username);
+      logger.warn('User already exists:', existingUser.username);
       return res.status(400).json({
         message: "Username hoặc email đã tồn tại",
       });
@@ -44,7 +45,7 @@ router.post("/", async (req, res) => {
     const newUser = new User({ username, email, name, bio, avatar, role: role || 'user' });
     const savedUser = await newUser.save();
     
-    console.log('User saved to MongoDB:', savedUser._id);
+    logger.info('User saved to MongoDB:', savedUser._id.toString());
 
     // Tạo user node trong Neo4j (chỉ cho role user)
     if (savedUser.role === 'user') {
@@ -68,9 +69,9 @@ router.post("/", async (req, res) => {
         );
         
         await session.close();
-        console.log('User created in Neo4j');
+        logger.info('User created in Neo4j');
       } catch (neo4jError) {
-        console.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+        logger.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
       }
     }
 
@@ -79,7 +80,7 @@ router.post("/", async (req, res) => {
       data: savedUser,
     });
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error('Error creating user:', error);
     res.status(500).json({ 
       message: "Lỗi khi tạo user", 
       error: error.message 
@@ -143,7 +144,7 @@ router.put("/:id", async (req, res) => {
       
       await session.close();
     } catch (neo4jError) {
-      console.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+      logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
     }
 
     res.status(200).json({
@@ -200,7 +201,7 @@ router.patch("/:id", async (req, res) => {
         
         await session.close();
       } catch (neo4jError) {
-        console.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+        logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
       }
     }
 
