@@ -114,6 +114,16 @@ npm run test-neo4j
 
 ---
 
+## Get/Check primary shard
+```powershell
+# Get primary of shard 1
+mongosh --port 27022 --eval "rs.status()" | Select-String "PRIMARY|SECONDARY|name"
+# Get primary of shard 2
+mongosh --port 27025 --eval "rs.status()" | Select-String "PRIMARY|SECONDARY|name"
+# Get primary of shard 3
+mongosh --port 27028 --eval "rs.status()" | Select-String "PRIMARY|SECONDARY|name"
+```
+
 ## 🚀 Test High Availability
 
 ### Scenario 1: Tắt 1 máy (Cluster vẫn hoạt động)
