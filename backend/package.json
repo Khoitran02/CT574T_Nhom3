@@ -5,8 +5,10 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test-neo4j": "node test-neo4j.js",
-    "test-mongodb": "node test-mongodb.js"
+    "seed": "node script/seed-data.js",
+    "test-neo4j": "node script/test-neo4j.js",
+    "test-mongodb": "node script/test-mongodb.js",
+    "test-failover": "node script/test-shard-failover.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

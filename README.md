@@ -26,18 +26,6 @@
 - **MongoDB Sharded Cluster** - Document storage (Users, Posts, Comments)
 - **Neo4j** - Graph database (User relationships: FOLLOWS)
 
-## Mô hình triển khai
-
-### Development Environment (1 máy)
-- **MongoDB Native Cluster**: 6 mongod processes + 1 mongos router
-- **Neo4j Local**: Graph database instance
-- **Frontend Dev Server**: Vite (port 5173)
-- **Backend API Server**: Express (port 3001)
-
-### Production Environment (4 máy LAN)
-- **Máy 1**: Frontend + Backend API + MongoDB Router (mongos) + Neo4j
-- **Máy 2-4**: MongoDB Sharded Cluster (3 shards với replica sets)
-
 ## Yêu cầu hệ thống
 
 ### Development (1 máy)
@@ -53,52 +41,53 @@
 - **Neo4j Community 5.15+** - Graph database
 - **Node.js 18.x+** - Runtime environment
 
-## 🚀 Hai mô hình triển khai
+## Mô hình triển khai
 
-### 1. **Development** (Native MongoDB trên 1 máy)
-- 📋 **Mục đích**: Development, Testing, Demo, Learning
-- 🔧 **Yêu cầu**: MongoDB Community Server + Neo4j Desktop + PowerShell 5.1+
-- ⏱️ **Setup time**: 5 phút (tự động)
-- 💾 **Tài nguyên**: ~2-3 GB RAM
-- 📖 **Hướng dẫn**: [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)
-
-### 2. **Production** (4 máy Windows thực tế)
-- 📋 **Mục đích**: Production environment, High availability
-- 🖥️ **Yêu cầu**: 4 máy Windows trong cùng LAN
-- ⏱️ **Setup time**: 30-45 phút  
-- 💾 **Tài nguyên**: Phân tán trên 4 máy
-- 📖 **Hướng dẫn**: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
+### **MongoDB Sharded Cluster với Replica Sets**
+- **Kiến trúc**: 3 shards × 3 nodes = High Availability
+- **Local Development**: 1 máy Windows (13 processes)
+- **Production**: 4 máy Windows LAN (phân tán replica sets)
+- **Setup time**: ~10 phút (local), ~30 phút (production)
+- **Tài nguyên**: ~3-4 GB RAM (local), phân tán 4 máy (production)
+- **Hướng dẫn**: [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) | [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 
 ---
 
 ## ⚡ Quick Start
 
-### Development (Local - 1 máy)
+### Local Development
 
-#### 1. Clone và cài đặt dependencies
+#### 1. Clone và cài đặt
 ```powershell
 git clone [repo-url]
 cd CT574T_Nhom3
-
-# Cài đặt tất cả dependencies (root + backend + frontend)
 npm run install-all
 ```
 
-#### 2. Khởi động MongoDB Cluster
+#### 2. Start MongoDB Cluster (HA)
+(Ưu tiên chạy bằng quyền admin)
 ```powershell
-# Start MongoDB cluster tự động (6 mongod + 1 mongos)
-.\script\start-mongodb-cluster.ps1
+.\script\start-mongodb-cluster-ha.ps1
 ```
 
-#### 3. Setup Neo4j
+#### 3. Setup và Seed
+```powershell
+cd backend
+node script/setup-sharding.js
+// tạo admin user
+npm run seed 
+```
+
+#### 4. Setup Neo4j
 - Mở **Neo4j Desktop**
 - Tạo database mới hoặc start database có sẵn
 - Mặc định: `http://localhost:7474` (neo4j/password123)
 - Cấu hình trong `backend/.env`
 
-#### 4. Khởi động ứng dụng
+#### 5. Khởi động ứng dụng
 ```powershell
 # Chạy fullstack (Frontend + Backend)
+cd ..
 npm run dev
 ```
 
@@ -111,33 +100,34 @@ Chi tiết: [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md)
 - **MongoDB Router**: mongodb://localhost:27017
 - **Neo4j Browser**: http://localhost:7474
 
-## Cấu trúc dự án
+## Cấu Trúc Hệ Thống
 
-```
-CT574T_Nhom3/
-├── frontend/               # React Frontend
-│   ├── src/
-│   │   ├── components/    # React components (UI, Posts, Users, Social)
-│   │   ├── pages/         # Page components (Home, Users, Posts, Network, Database)
-│   │   ├── services/      # API client (axios)
-│   │   └── main.jsx       # Entry point
-│   ├── package.json
-│   └── vite.config.js
-├── backend/               # Node.js Backend
-│   ├── config/           # Database configurations (MongoDB, Neo4j)
-│   ├── models/           # Mongoose schemas (Users, Posts, Comments)
-│   ├── routes/           # API routes
-│   ├── app.js           # Express app
-│   └── package.json
-├── script/               # Automation scripts
-│   ├── start-mongodb-cluster.ps1  # MongoDB cluster startup
-│   └── neo4j/           # Neo4j setup guides
-├── docs/                 # Documentation
-│   ├── DEVELOPMENT_SETUP.md
-│   └── PRODUCTION_SETUP.md
-├── package-fullstack.json  # Root dependencies
-└── README.md
-```
+### Phân Quyền
+
+#### **Admin Role**
+- Được lưu trữ **chỉ trong MongoDB**
+- Truy cập Admin Panel tại `/admin/*`
+- Quản lý toàn bộ users, posts, và database
+
+#### **User Role**  
+- Được lưu trữ trong **cả MongoDB và Neo4j**
+- Truy cập trang chính tại `/`
+- Đăng ký, đăng nhập, đăng bài, follow users
+
+### Routing
+
+#### Public Routes
+- `/login` - Đăng nhập / Đăng ký
+
+#### User Routes
+- `/` - News Feed (Feed.jsx)
+
+#### Admin Routes (với prefix `/admin`)
+- `/admin` - Dashboard
+- `/admin/users` - Quản lý users
+- `/admin/posts` - Quản lý posts
+- `/admin/network` - Xem mạng xã hội
+- `/admin/database` - Database status
 
 ## Scripts có sẵn
 
@@ -153,8 +143,23 @@ npm run test-databases # Test kết nối databases
 # Backend scripts (cd backend)
 npm start             # Start backend server
 npm run dev          # Start với nodemon (auto-reload)
+npm run seed         # Seed admin user
 npm run test-mongodb # Test MongoDB connection
 npm run test-neo4j   # Test Neo4j connection
+npm run test-failover # Test shard failover
+
+# MongoDB Sharding scripts (cd backend)
+node script/setup-sharding.js              # Setup sharding cho collections
+node script/check-shard-location.js <collection> <id>  # Kiểm tra record ở shard nào
+node script/check-shard-location.js --direct <collection> <id>  # Query trực tiếp shards
+node script/check-shard-location.js --list-shards      # Liệt kê shards
+
+# High Availability Testing (script/)
+.\script\start-mongodb-cluster-ha.ps1         # Start HA cluster (13 processes)
+.\script\stop-machine.ps1 -MachineNumber <1-3>  # Tắt "máy ảo" (Config + Node của 3 shards)
+.\script\start-machine.ps1 -MachineNumber <1-3> # Start lại "máy ảo"
+.\script\cleanup-mongodb-ha.ps1              # Cleanup HA cluster
+.\script\cleanup-mongodb-ha.ps1 -KeepData              # Chỉ stop processes, KHÔNG xóa C:\MongoDB-Dev-HA
 
 # Frontend scripts (cd frontend)
 npm run dev          # Start dev server (Vite)
@@ -162,131 +167,71 @@ npm run build        # Build production
 npm run preview      # Preview production build
 ```
 
-## Tính năng chính
+### Sharding Strategy (MongoDB 8.2+)
 
-### 1. Quản lý người dùng
-- ✅ CRUD operations (Create, Read, Update, Delete)
-- ✅ User profile management
-- ✅ Đồng bộ dữ liệu MongoDB ↔ Neo4j
+**Collections Sharded:**
+- **users**: Shard key = `_id` (hashed) - Phân bố đều users
+- **posts**: Shard key = `authorId` (hashed) - Phân bố đều posts
+- **comments**: Shard key = `postId` (hashed) - Phân bố đều comments
 
-### 2. Quản lý bài viết
-- ✅ Tạo, sửa, xóa, xem bài viết
-- ✅ Hệ thống tags
-- ✅ Like/Unlike posts
-- ✅ Data sharding trên MongoDB cluster
+**Workflow Setup:**
+1. Start cluster → 2. Setup sharding → 3. Seed data → 4. Chunks tự động tạo
 
-### 3. Hệ thống bình luận
-- ✅ Comment trên bài viết
-- ✅ Nested comments support
-- ✅ Sharded storage
-
-### 4. Mối quan hệ người dùng (Neo4j)
-- ✅ Follow/Unfollow users
-- ✅ Danh sách followers/following
-- ✅ Graph-based relationship queries
-- ✅ Social network visualization
-
-### 5. Database Monitoring
-- ✅ Real-time database status
-- ✅ MongoDB cluster health check
-- ✅ Neo4j connection monitoring
-- ✅ Statistics dashboard
-
-## Database Schema
-
-### MongoDB Collections
-
-**users** - Thông tin người dùng
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  email: String,
-  age: Number,
-  createdAt: Date,
-  updatedAt: Date
-}
+**Kiểm tra sharding:**
+```bash
+node backend/check-shard-location.js --direct users <user_id>
 ```
 
-**posts** - Bài viết
-```javascript
-{
-  _id: ObjectId,
-  userId: ObjectId,
-  content: String,
-  tags: [String],
-  likes: Number,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+**Test Shard Failover:**
 
-**comments** - Bình luận
-```javascript
-{
-  _id: ObjectId,
-  postId: ObjectId,
-  userId: ObjectId,
-  content: String,
-  createdAt: Date
-}
-```
-
-### Neo4j Graph Schema
-
-**User Nodes**
-```cypher
-(:User {
-  id: String,        // MongoDB _id
-  name: String,
-  email: String
-})
-```
-
-**Relationships**
-```cypher
-(:User)-[:FOLLOWS {since: DateTime}]->(:User)
-```
-
-### Sharding Strategy
-- **users**: Shard key = `_id` (hash-based distribution)
-- **posts**: Shard key = `userId` (posts cùng user trên 1 shard)
-- **comments**: Shard key = `postId` (comments cùng post trên 1 shard)
-
-## Troubleshooting
-
-### MongoDB Cluster không start
+### Scenario 1: Tắt 1 máy (Cluster vẫn hoạt động)
 ```powershell
-# Kiểm tra processes đang chạy
-Get-Process mongod, mongos
+# Tắt Máy 1 (Node1 của tất cả shards)
+.\script\stop-machine.ps1 1
 
-# Stop tất cả MongoDB processes
-Get-Process mongod, mongos | Stop-Process -Force
+# Kiểm tra trạng thái
+npm run test-failover
+# → Mỗi shard còn 2/3 nodes
+# → Data VẪN accessible ✅
 
-# Xóa lock files và restart
-.\script\start-mongodb-cluster.ps1
+# Khởi động lại
+.\script\start-machine.ps1 1
 ```
 
-### Neo4j connection failed
-- Kiểm tra Neo4j Desktop đã start database chưa
-- Verify credentials trong `backend/.env`
-- Mặc định: `neo4j://localhost:7687`, user: `neo4j`, password: `password123`
-
-### Frontend không kết nối được Backend
-- Kiểm tra Backend đang chạy: http://localhost:3001
-- Verify CORS settings trong `backend/app.js`
-- Check network tab trong browser DevTools
-
-### Port conflicts
+### Scenario 2: Tắt 2 máy (Cluster read-only)
 ```powershell
-# Kiểm tra port đang được sử dụng
-netstat -ano | findstr :3001
-netstat -ano | findstr :5173
-netstat -ano | findstr :27017
+# Tắt Máy 1 và Máy 2
+.\script\stop-machine.ps1 1
+.\script\stop-machine.ps1 2
 
-# Kill process nếu cần
-taskkill /PID <PID> /F
+# Kiểm tra trạng thái
+npm run test-failover
+# → Mỗi shard chỉ còn 1/3 nodes
+# → KHÔNG thể ghi (cần đa số nodes)
+# → API trả về HTTP 503
+
+# Khởi động lại
+.\script\start-machine.ps1 1
+.\script\start-machine.ps1 2
 ```
+
+**Lưu ý:**
+- Mỗi shard có 3 nodes phân bố trên 3 máy ảo
+- Tắt 1 máy → Mỗi shard còn 2/3 nodes → ✅ Hoạt động bình thường
+- Tắt 2 máy → Chỉ còn 1/3 nodes → ❌ Không thể ghi (cần majority)
+- Automatic failover khi primary down (~10-15 giây)
+
+## Lưu Ý Quan Trọng
+
+1. **Password Security**: Passwords được hash bằng bcrypt với salt rounds = 10
+
+2. **Neo4j for Users Only**: Chỉ user role được tạo node trong Neo4j, admin không cần vì không tham gia social network
+
+3. **Follow là 1 chiều**: User A follow User B không tự động tạo follow ngược lại
+
+4. **Session Management**: Hiện tại sử dụng localStorage, trong production nên dùng JWT
+
+5. **Form Labels**: Tất cả modal forms đã được chuẩn hóa với label text-left
 
 ## License
 Dự án học tập - CT574T Cơ sở dữ liệu nâng cao

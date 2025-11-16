@@ -1,13 +1,15 @@
 import express from "express";
 import Comment from "../models/comments.model.js";
+import { withFailover, handleShardError } from "../config/failover.js";
 
 const router = express.Router();
 
 // Lấy tất cả comments - GET /api/comments
 router.get("/", async (req, res) => {
   try {
-    const comments = await Comment.find({ isVisible: true })
-      .sort({ createdAt: -1 });
+    const comments = await withFailover(
+      Comment.find({ isVisible: true }).sort({ createdAt: -1 })
+    );
 
     res.status(200).json({
       message: "Lấy tất cả comments thành công",
@@ -15,10 +17,7 @@ router.get("/", async (req, res) => {
       total: comments.length,
     });
   } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi lấy comments",
-      error: err.message,
-    });
+    return handleShardError(err, res, 'lấy comments');
   }
 });
 
@@ -28,10 +27,9 @@ router.get("/post/:postId", async (req, res) => {
     const { postId } = req.params;
     
     // Lấy tất cả comments và replies
-    const allComments = await Comment.find({ 
-      postId, 
-      isVisible: true 
-    }).sort({ createdAt: 1 });
+    const allComments = await withFailover(
+      Comment.find({ postId, isVisible: true }).sort({ createdAt: 1 })
+    );
 
     // Tổ chức thành cấu trúc tree
     const commentMap = {};

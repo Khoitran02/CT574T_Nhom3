@@ -1,6 +1,6 @@
 // test-mongodb.js
 // Script để test kết nối MongoDB Cluster
-import { connectMongoDB, getMongoConnection, closeMongoConnection, testMongoConnection } from './config/mongodb.js';
+import { connectMongoDB, getMongoConnection, closeMongoConnection, testMongoConnection } from '../config/mongodb.js';
 
 async function testMongoDBConnection() {
   try {

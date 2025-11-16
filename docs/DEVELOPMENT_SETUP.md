@@ -1,14 +1,17 @@
 # Development Setup
-## 🎯 Mô hình Development: 1 máy Native MongoDB Cluster
-
-Dành cho: **Development**
+## 🎯 Mô hình Development: MongoDB HA Cluster (1 máy)
 
 ### Kiến trúc
-- **Native MongoDB**: 6 processes (3 config servers + 3 shards + 1 mongos)
+- **MongoDB HA Cluster**: 13 processes (3 config + 9 shards + 1 mongos)
+- **Replica Sets**: Mỗi shard có 3 nodes → Automatic failover
 - **Native Windows**: Web App + Neo4j + MongoDB Cluster
 
+**Chi tiết kiến trúc MongoDB HA Cluster:**
+- 13 processes: 3 config + 9 shards (3×3 replica sets) + 1 mongos
+- Ports: Config (27019-27021), Shards (27022-27030), Router (27017)
+
 ### Yêu cầu
-- MongoDB Community Server 8.2+ (bao gồm mongod, mongos, mongosh)
+- MongoDB Community Server 8.2+
 - Neo4j Desktop  
 - Node.js 18+
 - Windows 10/11, RAM 4GB+
@@ -16,94 +19,65 @@ Dành cho: **Development**
 
 ---
 
-## ⚡ Quick Start (2 phút)
+## ⚡ Quick Start (3 phút)
 
-**Cách nhanh nhất - chỉ cần 3 lệnh:**
 ```powershell
-# 1. Right-click PowerShell → "Run as Administrator"
-// Đổi đường dẫn lại tùy theo máy
-cd "D:\Study\ThS_2025-2027\CT574T-Co_so_du_lieu_nang_cao\Source\CT574T_Nhom3"
+# Cd vào thư mục dự án trước. Ưu tiên chạy powershell với quyền admin
+# 1. Start MongoDB HA cluster
+.\script\start-mongodb-cluster-ha.ps1
 
-# 2. Start MongoDB cluster
-.\script\start-mongodb-cluster.ps1 -Verbose
+# 2. Setup sharding và seed
+cd backend
+node script/setup-sharding.js
+npm run seed
 
-# 3. Start app
-Khởi chạy lần lượt Backend và Frontend
+# 3. Start backend
+npm run dev 
 
-// cd backend
-npm run start
-
-// cd frontend
+# 4. Start frontend (terminal mới)
+cd ../frontend
 npm run dev
 ```
 
+**Truy cập:** http://localhost:5173
+
 ---
 
-## 🚀 Setup từng bước (5 phút)
+## 🚀 Setup từng bước (10 phút)
 
-### Bước 1: Chuẩn bị môi trường (1 phút)
+### Bước 1: Chuẩn bị môi trường
 ```powershell
-# Clone project và chuẩn bị
 git clone [repo-url]  
 cd CT574T_Nhom3
-npm install
-
-# Tạo thư mục dữ liệu cho MongoDB cluster
-mkdir C:\MongoDB-Dev -Force
-mkdir C:\MongoDB-Dev\data\config1, C:\MongoDB-Dev\data\config2, C:\MongoDB-Dev\data\config3 -Force
-mkdir C:\MongoDB-Dev\data\shard1, C:\MongoDB-Dev\data\shard2, C:\MongoDB-Dev\data\shard3 -Force
-mkdir C:\MongoDB-Dev\logs -Force
+npm run install-all
 ```
 
-### Bước 2: Khởi động MongoDB Cluster tự động (1 phút)
-
-**⭐ Recommended: Run PowerShell as Administrator** (Tránh mọi permission issues)
+### Bước 2: Start MongoDB HA Cluster
 ```powershell
-# 1. Right-click PowerShell → "Run as Administrator"
-# 2. Navigate to project directory
-// Đổi đường dẫn lại tùy theo máy
-cd "D:\Study\ThS_2025-2027\CT574T-Co_so_du_lieu_nang_cao\Source\CT574T_Nhom3"
-
-# 3. Start cluster (script sẽ tự động handle conflicts)
-.\script\start-mongodb-cluster.ps1 -Verbose
+# Cd vào thư mục dự án trước. Ưu tiên chạy powershell với quyền admin
+.\script\start-mongodb-cluster-ha.ps1
 ```
 
-**Giải pháp thay thế: Giải quyết xung đột thủ công**
+### Bước 3: Setup Sharding và Seed
 ```powershell
-# Kiểm tra nếu MongoDB service đang chạy (có thể conflict port 27017)
-Get-Service MongoDB -ErrorAction SilentlyContinue
-
-# Nếu có conflict, stop MongoDB service trước:
-net stop MongoDB
-
-# Sau đó chạy cluster script
-.\script\start-mongodb-cluster.ps1
-
-# Hoặc thực hiện manual (xem Phụ lục A)
+cd backend
+node script/setup-sharding.js
+npm run seed
 ```
 
-### Bước 3: Kiểm tra cluster status (30 giây)
+### Bước 4: Setup Neo4j
+- Mở Neo4j Desktop
+- Tạo database: `socialnetwork`
+- Password: `password123`
+- Start database
+
+### Bước 5: Start Ứng dụng
 ```powershell
-# Script sẽ tự động test cluster - chỉ cần kiểm tra output
-# Nếu cần test manual:
-mongosh --port 27017 --eval "sh.status()"
-```
+# Backend
+npm run dev
 
-### Bước 4: Setup Neo4j (1 phút)
-1. **Neo4j Desktop**: Download từ https://neo4j.com/download/
-2. **Create Project**: "Social Network"
-3. **Add Database**: 
-   - Name: `socialnetwork`
-   - Password: `password123`
-   - Version: 5.x
-4. **Start Database**: Click "Start"
-
-### Bước 5: Khởi động Web App (1 phút)
-```powershell
-// cd backend
-npm run start
-
-// cd frontend
+# Frontend (terminal mới)
+cd ../frontend
 npm run dev
 ```
 
@@ -111,120 +85,74 @@ npm run dev
 
 ## ✅ Kiểm tra hoạt động
 
-### 🎯 Quick Status Check:
 ```powershell
-# 1. Check all processes running (should see 7: 6 mongod + 1 mongos)
-Get-Process mongod, mongos -ErrorAction SilentlyContinue | Format-Table Name, Id, StartTime
-
-# 2. Test cluster connectivity
-mongosh --port 27017 --eval "db.runCommand('ping')"
-
-# 3. Verify sharding is working
+# 1. Test cluster connectivity
 mongosh --port 27017 --eval "sh.status()"
-```
 
-**✅ Success indicators:**
-- 7 MongoDB processes running 
-- `db.runCommand('ping')` returns `{ ok: 1 }`
-- `sh.status()` shows 3 shards active
-
-### Truy cập services:
-- **Web App**: http://localhost:3000
-- **MongoDB Cluster**: mongodb://localhost:27017/socialnetwork  
-- **Neo4j Browser**: http://localhost:7474 (neo4j/password123)
-
-### Native MongoDB processes và ports:
-- **Config Servers**: localhost:27019, 27020, 27021
-- **Shards**: localhost:27022, 27023, 27024
-- **Router (mongos)**: localhost:27017
-
-### Test kết nối databases:
-(Chạy ở thư mục backend)
-```powershell
-# 1. Test MongoDB cluster
+# 2. Test databases
+cd backend
 npm run test-mongodb
-
-# 2. Test Neo4j connection  
 npm run test-neo4j
 ```
 
+**Truy cập:**
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
+- Neo4j Browser: http://localhost:7474
+
 ---
 
-### Quick cleanup & restart:
+## 🧹 Cleanup
+
 ```powershell
-# Complete reset using cleanup script
-.\script\cleanup-mongodb.ps1
+# Stop cluster và xóa data
+.\script\cleanup-mongodb-ha.ps1
 
-# Complete reset using cleanup script (No clear Data)
-.\script\cleanup-mongodb.ps1 -KeepData -Force
-
-# Fresh restart
-.\script\start-mongodb-cluster.ps1
+# Stop cluster nhưng giữ data
+.\script\cleanup-mongodb-ha.ps1 -KeepData
 ```
 
 ---
 
-## 📚 Phụ lục A: Manual Setup Commands
+## 🚀 Test High Availability
 
-Nếu bạn muốn hiểu từng bước manual thay vì dùng script:
-
-### A1. Manual MongoDB Cluster Commands (đồng bộ với script)
-
-> **Lưu ý**: Các lệnh sau đây được extract từ `start-mongodb-cluster.ps1`. 
-> Khuyến nghị sử dụng script thay vì chạy manual.
+### Scenario 1: Tắt 1 máy (Cluster vẫn hoạt động)
 
 ```powershell
-# 0. Check port conflicts first
-$criticalPorts = @(27017, 27019, 27020, 27021, 27022, 27023, 27024)
-foreach ($port in $criticalPorts) {
-    netstat -ano | findstr ":$port "
-}
+# 1. Test baseline
+npm run test-failover
 
-# 1. Create data directories
-mkdir C:\MongoDB-Dev\data\config1, C:\MongoDB-Dev\data\config2, C:\MongoDB-Dev\data\config3 -Force
-mkdir C:\MongoDB-Dev\data\shard1, C:\MongoDB-Dev\data\shard2, C:\MongoDB-Dev\data\shard3 -Force  
-mkdir C:\MongoDB-Dev\logs -Force
+# 2. Tắt Máy ảo 1 (Node1 của tất cả shards)
+.\script\stop-machine.ps1 1
 
-# 2. Start Config Servers (wait 3s between each)
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--configsvr --replSet configrs --port 27019 --dbpath `"C:\MongoDB-Dev\data\config1`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\configsvr1.log`"" -WindowStyle Minimized
-Start-Sleep 3
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--configsvr --replSet configrs --port 27020 --dbpath `"C:\MongoDB-Dev\data\config2`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\configsvr2.log`"" -WindowStyle Minimized  
-Start-Sleep 3
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--configsvr --replSet configrs --port 27021 --dbpath `"C:\MongoDB-Dev\data\config3`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\configsvr3.log`"" -WindowStyle Minimized
-Start-Sleep 5
+# 3. Verify data vẫn accessible
+npm run test-failover
+# → Mỗi shard còn 2/3 nodes
+# → Data VẪN accessible ✅
 
-# 3. Wait and initialize config replica set
-Start-Sleep 15
-mongosh --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'localhost:27019'}, {_id: 1, host: 'localhost:27020'}, {_id: 2, host: 'localhost:27021'}]})"
-Start-Sleep 10
-
-# 4. Start Shard Servers
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--shardsvr --replSet shard1rs --port 27022 --dbpath `"C:\MongoDB-Dev\data\shard1`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\shard1.log`"" -WindowStyle Minimized
-Start-Sleep 3
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--shardsvr --replSet shard2rs --port 27023 --dbpath `"C:\MongoDB-Dev\data\shard2`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\shard2.log`"" -WindowStyle Minimized
-Start-Sleep 3
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" -ArgumentList "--shardsvr --replSet shard3rs --port 27024 --dbpath `"C:\MongoDB-Dev\data\shard3`" --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\shard3.log`"" -WindowStyle Minimized  
-Start-Sleep 5
-
-# 5. Initialize shard replica sets
-Start-Sleep 10
-mongosh --port 27022 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: 'localhost:27022'}]})"
-mongosh --port 27023 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: 'localhost:27023'}]})"
-mongosh --port 27024 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: 'localhost:27024'}]})"
-Start-Sleep 15
-
-# 6. Start mongos router
-Start-Process -FilePath "C:\Program Files\MongoDB\Server\8.2\bin\mongos.exe" -ArgumentList "--configdb configrs/localhost:27019,localhost:27020,localhost:27021 --port 27017 --bind_ip 127.0.0.1 --logpath `"C:\MongoDB-Dev\logs\mongos.log`"" -WindowStyle Normal
-Start-Sleep 10
-
-# 7. Configure sharding
-mongosh --port 27017 --eval "sh.addShard('shard1rs/localhost:27022')"
-mongosh --port 27017 --eval "sh.addShard('shard2rs/localhost:27023')"  
-mongosh --port 27017 --eval "sh.addShard('shard3rs/localhost:27024')"
-mongosh --port 27017 --eval "sh.enableSharding('socialnetwork')"
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.users', {user_id: 1})"
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.posts', {user_id: 1})"
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.comments', {post_id: 1})"
+# 4. Khởi động lại
+.\script\start-machine.ps1 1
 ```
 
-**Automated Alternative**: `.\script\start-mongodb-cluster.ps1` (khuyến nghị)
+### Scenario 2: Tắt 2 máy (Cluster read-only)
+
+```powershell
+# 1. Tắt Máy ảo 1 và 2
+.\script\stop-machine.ps1 1
+.\script\stop-machine.ps1 2
+
+# 2. Verify cluster read-only
+npm run test-failover
+# → Mỗi shard chỉ còn 1/3 nodes
+# → KHÔNG thể ghi (cần đa số nodes)
+# → API trả về HTTP 503
+
+# 3. Khởi động lại
+.\script\start-machine.ps1 1
+.\script\start-machine.ps1 2
+```
+
+**Kết quả:**
+- ✅ Tắt 1 máy → Mỗi shard còn 2/3 nodes → Hoạt động bình thường
+- ❌ Tắt 2 máy → Chỉ còn 1/3 nodes → Không thể ghi (cần majority)
+- ✅ Automatic failover khi primary down (~10-15 giây)

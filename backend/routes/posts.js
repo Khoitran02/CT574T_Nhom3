@@ -2,13 +2,16 @@ import express from "express";
 import Post from "../models/posts.model.js";
 import Comment from "../models/comments.model.js";
 import { getNeo4jSession } from "../config/database.js";
+import { withFailover, handleShardError } from "../config/failover.js";
 
 const router = express.Router();
 
 // Lấy tất cả posts
 router.get("/", async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const posts = await withFailover(
+      Post.find().sort({ createdAt: -1 })
+    );
     const data = posts.map((post) => ({
       id: post._id.toString(),
       content: post.content,
@@ -25,10 +28,7 @@ router.get("/", async (req, res) => {
       total: posts.length,
     });
   } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi lấy dữ liệu",
-      error: err.message,
-    });
+    return handleShardError(err, res, 'lấy dữ liệu bài viết');
   }
 });
 
@@ -38,7 +38,9 @@ router.post("/", async (req, res) => {
     // Kiểm tra nếu là admin thì không cho tạo post
     if (req.body.userId) {
       const User = (await import('../models/users.model.js')).default;
-      const user = await User.findById(req.body.userId);
+      const user = await withFailover(
+        User.findById(req.body.userId)
+      );
       if (user && user.role === 'admin') {
         return res.status(403).json({
           message: "Admin không được tạo post. Chỉ user mới có thể tạo post.",

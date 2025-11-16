@@ -1,6 +1,6 @@
 // test-neo4j.js
 // Script để test kết nối Neo4j
-import { connectNeo4j, getNeo4jSession, closeNeo4jConnection, testNeo4jConnection } from './config/neo4j.js';
+import { connectNeo4j, getNeo4jSession, closeNeo4jConnection, testNeo4jConnection } from '../config/neo4j.js';
 
 async function testNeo4jConnection() {
   try {

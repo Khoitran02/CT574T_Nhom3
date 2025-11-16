@@ -1,166 +1,365 @@
 # Production Setup  
-## 🎯 Mô hình Production: 3-4 máy Windows thực tế
+## 🎯 Mô hình Production: 4 Máy
 
-Dành cho: **Production deployment, High availability, Demo thực tế**
-
-### Kiến trúc (Tương thích với Development Setup)
-- **Máy 1**: Web App + MongoDB Router (mongos) + Neo4j  
-- **Máy 2-4**: MongoDB Sharded Cluster (3 shards + 3 config servers)
-
-> **100% tương thích** với Development setup - chỉ khác về IP addresses và số lượng máy
+### Kiến trúc Tối Ưu (4 máy)
+- **Máy 1**: Web App + MongoDB Router (mongos) + Neo4j
+- **Máy 2**: Config1 + Shard1-Node1 + Shard2-Node1 + Shard3-Node1
+- **Máy 3**: Config2 + Shard1-Node2 + Shard2-Node2 + Shard3-Node2
+- **Máy 4**: Config3 + Shard1-Node3 + Shard2-Node3 + Shard3-Node3
 
 ### Yêu cầu
-- 3-4 máy Windows 10/11 trong cùng LAN (hoặc VPN)
-- MongoDB Community Server 8.2+ trên mỗi máy (cùng version với Development)  
+- 4 máy Windows 10/11 trong cùng LAN
+- MongoDB Community Server 8.2+ (cùng version trên tất cả máy)
 - Node.js 18+ (chỉ máy 1)
 - Neo4j Desktop (chỉ máy 1)
-- PowerShell 5.1+ trên tất cả máy
+- PowerShell 5.1+
+- RAM: 4GB+ mỗi máy
 
 ---
 
-## 🏗️ IP Planning (thay đổi theo mạng của bạn)
+## 🏗️ IP Planning (4 máy)
 
-| Máy | IP | Role | Ports |
+| Máy | IP | Services | Ports |
 |-----|----|----- |-------|
 | **Máy 1** | 192.168.1.100 | Web App + mongos + Neo4j | 3000, 27017, 7474, 7687 |
-| **Máy 2** | 192.168.1.101 | Shard1 + Config1 | 27018, 27019 |
-| **Máy 3** | 192.168.1.102 | Shard2 + Config2 | 27018, 27019 |
-| **Máy 4** | 192.168.1.103 | Shard3 + Config3 | 27018, 27019 |
+| **Máy 2** | 192.168.1.101 | Config1 + Shard1-N1 + Shard2-N1 + Shard3-N1 | 27019, 27022, 27025, 27028 |
+| **Máy 3** | 192.168.1.102 | Config2 + Shard1-N2 + Shard2-N2 + Shard3-N2 | 27020, 27023, 27026, 27029 |
+| **Máy 4** | 192.168.1.103 | Config3 + Shard1-N3 + Shard2-N3 + Shard3-N3 | 27021, 27024, 27027, 27030 |
 
+**Chi tiết phân bố:**
+
+**Máy 1 (Application Layer):**
+- mongos Router: port 27017
+- Web App (Backend + Frontend): port 3000
+- Neo4j: ports 7474, 7687
+
+**Máy 2 (Data Layer - Node 1 của mỗi shard):**
+- Config Server 1: port 27019
+- Shard1-Node1: port 27022 (shard1rs)
+- Shard2-Node1: port 27025 (shard2rs)
+- Shard3-Node1: port 27028 (shard3rs)
+
+**Máy 3 (Data Layer - Node 2 của mỗi shard):**
+- Config Server 2: port 27020
+- Shard1-Node2: port 27023 (shard1rs)
+- Shard2-Node2: port 27026 (shard2rs)
+- Shard3-Node2: port 27029 (shard3rs)
+
+**Máy 4 (Data Layer - Node 3 của mỗi shard):**
+- Config Server 3: port 27021
+- Shard1-Node3: port 27024 (shard1rs)
+- Shard2-Node3: port 27027 (shard2rs)
+- Shard3-Node3: port 27030 (shard3rs)
 ---
 
-## 🚀 Cài đặt từng bước (30 phút)
+## 🚀 Setup từng bước (30 phút)
 
-### Bước 1: Chuẩn bị môi trường (10 phút)
+### Bước 1: Chuẩn bị (5 phút)
 
 **Trên tất cả 4 máy:**
-1. **Cài đặt MongoDB**: Download MongoDB Community Server 8.0+ từ mongodb.com
-2. **Tạo thư mục dữ liệu**: 
+
+1. **Cài đặt MongoDB Community Server 8.2+**
+
+2. **Tạo thư mục dữ liệu:**
+   
+   **Máy 1 (Application Layer):**
+   ```cmd
+   # Không cần data directories (chỉ chạy mongos router)
+   ```
+   
+   **Máy 2 (Node 1 của các shards):**
    ```cmd
    mkdir C:\data\config1
-   mkdir C:\data\config2
-   mkdir C:\data\config3
-   mkdir C:\data\shard1
-   mkdir C:\data\shard2  
-   mkdir C:\data\shard3
+   mkdir C:\data\shard1-node1
+   mkdir C:\data\shard2-node1
+   mkdir C:\data\shard3-node1
    ```
-3. **Mở Windows Firewall** cho các ports: 27017, 27018, 27019
-4. **Test kết nối**: Ping giữa các máy để đảm bảo connectivity
+   
+   **Máy 3 (Node 2 của các shards):**
+   ```cmd
+   mkdir C:\data\config2
+   mkdir C:\data\shard1-node2
+   mkdir C:\data\shard2-node2
+   mkdir C:\data\shard3-node2
+   ```
+   
+   **Máy 4 (Node 3 của các shards):**
+   ```cmd
+   mkdir C:\data\config3
+   mkdir C:\data\shard1-node3
+   mkdir C:\data\shard2-node3
+   mkdir C:\data\shard3-node3
+   ```
 
-### Bước 2: Khởi động MongoDB Services (5 phút với automation)
+3. **Mở Windows Firewall:**
+   ```powershell
+   # Mở tất cả ports MongoDB (27017-27030)
+   New-NetFirewallRule -DisplayName "MongoDB Cluster" -Direction Inbound -LocalPort 27017-27030 -Protocol TCP -Action Allow
+   ```
 
-**📋Manual Setup (Educational)**
+4. **Test connectivity:**
+   ```cmd
+   # Từ mỗi máy, ping các máy khác
+   ping 192.168.1.100
+   ping 192.168.1.101
+   ping 192.168.1.102
+   ping 192.168.1.103
+   ```
 
-**Khởi động từng service trên từng máy:**
+### Bước 2: Start Config Servers (3 phút)
 
-**Máy 2 (192.168.1.101):**
-```cmd
-# Terminal 1: Config Server 1
+**Máy 2 (192.168.1.101) - Config1:**
+```powershell
 mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config1 --bind_ip 0.0.0.0
-
-# Terminal 2: Shard 1  
-mongod --shardsvr --replSet shard1rs --port 27018 --dbpath C:\data\shard1 --bind_ip 0.0.0.0
 ```
 
-**Máy 3 (192.168.1.102):**
-```cmd  
-# Terminal 1: Config Server 2
-mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config2 --bind_ip 0.0.0.0
-
-# Terminal 2: Shard 2
-mongod --shardsvr --replSet shard2rs --port 27018 --dbpath C:\data\shard2 --bind_ip 0.0.0.0
+**Máy 3 (192.168.1.102) - Config2:**
+```powershell
+mongod --configsvr --replSet configrs --port 27020 --dbpath C:\data\config2 --bind_ip 0.0.0.0
 ```
 
-**Máy 4 (192.168.1.103):**
-```cmd
-# Terminal 1: Config Server 3  
-mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config3 --bind_ip 0.0.0.0
-
-# Terminal 2: Shard 3
-mongod --shardsvr --replSet shard3rs --port 27018 --dbpath C:\data\shard3 --bind_ip 0.0.0.0
+**Máy 4 (192.168.1.103) - Config3:**
+```powershell
+mongod --configsvr --replSet configrs --port 27021 --dbpath C:\data\config3 --bind_ip 0.0.0.0
 ```
 
-> **Lưu ý**: Mỗi lệnh mongod cần chạy trong terminal riêng biệt. Để chạy background, có thể thêm `--logpath` và install MongoDB service.
+### Bước 3: Initialize Config Replica Set (1 phút)
 
-### Bước 3: Khởi tạo Replica Sets (5 phút) - Chạy trên Máy 1
-
-**Từ máy bất kỳ có mongosh:**
-
-```cmd
-# 1. Khởi tạo Config Server Replica Set
-mongosh --host 192.168.1.101 --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: '192.168.1.101:27019'}, {_id: 1, host: '192.168.1.102:27019'}, {_id: 2, host: '192.168.1.103:27019'}]})"
-
-# 2. Khởi tạo Shard Replica Sets  
-mongosh --host 192.168.1.101 --port 27018 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: '192.168.1.101:27018'}]})"
-mongosh --host 192.168.1.102 --port 27018 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: '192.168.1.102:27018'}]})"  
-mongosh --host 192.168.1.103 --port 27018 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: '192.168.1.103:27018'}]})"
+**Từ máy bất kỳ (khuyến nghị Máy 1):**
+```powershell
+mongosh --host 192.168.1.101 --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: '192.168.1.101:27019'}, {_id: 1, host: '192.168.1.102:27020'}, {_id: 2, host: '192.168.1.103:27021'}]})"
 ```
 
-**Đợi 30 giây** để các replica sets ổn định.
+Đợi 15 giây cho config servers ổn định.
 
-### Bước 4: Setup Sharding trên Máy 1 (5 phút)
+### Bước 4: Start Shard Servers (5 phút)
 
-**Trên Máy 1 (192.168.1.100):**
+**Shard 1 Replica Set (3 nodes phân tán 3 máy):**
 
-```cmd
-# 1. Khởi động mongos router
-mongos --configdb "configrs/192.168.1.101:27019,192.168.1.102:27019,192.168.1.103:27019" --port 27017 --bind_ip 0.0.0.0
+Máy 2:
+```powershell
+mongod --shardsvr --replSet shard1rs --port 27022 --dbpath C:\data\shard1-node1 --bind_ip 0.0.0.0
+```
 
-# 2. Trong terminal mới, cấu hình sharding:
-mongosh --port 27017 --eval "sh.addShard('shard1rs/192.168.1.101:27018')"
-mongosh --port 27017 --eval "sh.addShard('shard2rs/192.168.1.102:27018')"
-mongosh --port 27017 --eval "sh.addShard('shard3rs/192.168.1.103:27018')"
+Máy 3:
+```powershell
+mongod --shardsvr --replSet shard1rs --port 27023 --dbpath C:\data\shard1-node2 --bind_ip 0.0.0.0
+```
 
-# 3. Enable sharding cho database
+Máy 4:
+```powershell
+mongod --shardsvr --replSet shard1rs --port 27024 --dbpath C:\data\shard1-node3 --bind_ip 0.0.0.0
+```
+
+**Shard 2 Replica Set (3 nodes phân tán 3 máy):**
+
+Máy 2:
+```powershell
+mongod --shardsvr --replSet shard2rs --port 27025 --dbpath C:\data\shard2-node1 --bind_ip 0.0.0.0
+```
+
+Máy 3:
+```powershell
+mongod --shardsvr --replSet shard2rs --port 27026 --dbpath C:\data\shard2-node2 --bind_ip 0.0.0.0
+```
+
+Máy 4:
+```powershell
+mongod --shardsvr --replSet shard2rs --port 27027 --dbpath C:\data\shard2-node3 --bind_ip 0.0.0.0
+```
+
+**Shard 3 Replica Set (3 nodes phân tán 3 máy):**
+
+Máy 2:
+```powershell
+mongod --shardsvr --replSet shard3rs --port 27028 --dbpath C:\data\shard3-node1 --bind_ip 0.0.0.0
+```
+
+Máy 3:
+```powershell
+mongod --shardsvr --replSet shard3rs --port 27029 --dbpath C:\data\shard3-node2 --bind_ip 0.0.0.0
+```
+
+Máy 4:
+```powershell
+mongod --shardsvr --replSet shard3rs --port 27030 --dbpath C:\data\shard3-node3 --bind_ip 0.0.0.0
+```
+
+### Bước 5: Initialize Shard Replica Sets (2 phút)
+
+**Từ máy bất kỳ (khuyến nghị Máy 1):**
+
+```powershell
+# Initialize Shard 1 Replica Set (phân tán trên Máy 2,3,4)
+mongosh --host 192.168.1.101 --port 27022 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: '192.168.1.101:27022'}, {_id: 1, host: '192.168.1.102:27023'}, {_id: 2, host: '192.168.1.103:27024'}]})"
+
+# Đợi 15 giây
+Start-Sleep 15
+
+# Initialize Shard 2 Replica Set (phân tán trên Máy 2,3,4)
+mongosh --host 192.168.1.101 --port 27025 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: '192.168.1.101:27025'}, {_id: 1, host: '192.168.1.102:27026'}, {_id: 2, host: '192.168.1.103:27027'}]})"
+
+# Đợi 15 giây
+Start-Sleep 15
+
+# Initialize Shard 3 Replica Set (phân tán trên Máy 2,3,4)
+mongosh --host 192.168.1.101 --port 27028 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: '192.168.1.101:27028'}, {_id: 1, host: '192.168.1.102:27029'}, {_id: 2, host: '192.168.1.103:27030'}]})"
+```
+
+Đợi ~30 giây cho tất cả replica sets ổn định.
+
+### Bước 6: Start mongos Router (1 phút)
+
+**Máy 1 (192.168.1.100):**
+```powershell
+mongos --configdb "configrs/192.168.1.101:27019,192.168.1.102:27020,192.168.1.103:27021" --port 27017 --bind_ip 0.0.0.0
+```
+
+### Bước 7: Configure Sharding (3 phút)
+
+**Trên Máy 1, terminal mới:**
+
+```powershell
+# 1. Add shards (mỗi shard gồm 3 nodes phân tán trên 3 máy)
+mongosh --port 27017 --eval "sh.addShard('shard1rs/192.168.1.101:27022,192.168.1.102:27023,192.168.1.103:27024')"
+mongosh --port 27017 --eval "sh.addShard('shard2rs/192.168.1.101:27025,192.168.1.102:27026,192.168.1.103:27027')"
+mongosh --port 27017 --eval "sh.addShard('shard3rs/192.168.1.101:27028,192.168.1.102:27029,192.168.1.103:27030')"
+
+# 2. Enable sharding
 mongosh --port 27017 --eval "sh.enableSharding('socialnetwork')"
 
-# 4. Shard các collections
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.users', {'user_id': 1})"
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.posts', {'user_id': 1})"
-mongosh --port 27017 --eval "sh.shardCollection('socialnetwork.comments', {'post_id': 1})"
+# 3. Setup sharding cho collections
+cd backend
+node script/setup-sharding.js
 
-# 5. Kiểm tra cluster status
+# 4. Seed data
+npm run seed
+
+# 5. Verify
 mongosh --port 27017 --eval "sh.status()"
 ```
 
-### Bước 5: Setup Neo4j và Web App (5 phút)
+### Bước 8: Setup Neo4j và Web App (5 phút)
 
 **Trên Máy 1:**
 1. **Neo4j Desktop**: 
-   - Tạo database mới: `socialnetwork`
-   - Set password: `password123` 
+   - Tạo database: `socialnetwork`
+   - Password: `password123` 
    - Start database
+
+2. **Web App**:
+   - Cấu hình `.env` với MongoDB connection string
+   - Start backend và frontend
+
 ---
 
 ## ✅ Kiểm tra hoạt động
 
+### Test Cluster Status
 
-```cmd
-# 0. Đứng tại thư mục backend
-cd <đường dẫn tới backend>
+**Từ Máy 1:**
+```powershell
+# 1. Kiểm tra config replica set
+mongosh --host 192.168.1.101 --port 27019 --eval "rs.status()"
 
-# 1. Test MongoDB cluster
-npm run test-mongodb.js
+# 2. Kiểm tra shard1 replica set (node1 trên Máy 2)
+mongosh --host 192.168.1.101 --port 27022 --eval "rs.status()"
 
-# 2. Test Neo4j connection  
-npm run test-neo4j.js
+# 3. Kiểm tra shard2 replica set (node1 trên Máy 2)
+mongosh --host 192.168.1.101 --port 27025 --eval "rs.status()"
+
+# 4. Kiểm tra shard3 replica set (node1 trên Máy 2)
+mongosh --host 192.168.1.101 --port 27028 --eval "rs.status()"
+
+# 5. Kiểm tra cluster sharding
+mongosh --port 27017 --eval "sh.status()"
+
+# 6. Test MongoDB connection
+cd backend
+npm run test-mongodb
+
+# 7. Test Neo4j connection
+npm run test-neo4j
 ```
 
-### Truy cập services (Sửa thành IP Máy 1):
+### Truy cập services:
 - **Web App**: http://192.168.1.100:3000
-- **MongoDB Cluster**: mongodb://192.168.1.100:27017/socialnetwork
-- **Neo4j Browser**: http://192.168.1.100:7474 (neo4j/password123)
+- **MongoDB Router**: mongodb://192.168.1.100:27017/socialnetwork
+- **Neo4j Browser**: http://192.168.1.100:7474
 
 ---
 
-## 💡 Lưu ý quan trọng
+## 💡 Tổng kết
 
-- **Không cần PowerShell scripts**: Tất cả commands đều chạy trực tiếp
-- **Manual setup**: Linh hoạt hơn, dễ troubleshoot  
-- **Step-by-step**: Từng bước có thể kiểm tra và debug
-- **Production ready**: Tuân thủ MongoDB best practices
+**Cluster Architecture:**
+- 13 MongoDB processes (3 config + 9 shards + 1 mongos)
+- Phân bố: Máy 1 (mongos), Máy 2-4 (mỗi máy 4 processes)
+- **MỖI SHARD phân tán trên 3 máy khác nhau** → True High Availability
 
-**Setup Time**: ~30 phút (manual)
-**Tài nguyên**: Phân tán trên 4 máy
-**High Availability**: ✅ Chịu được 1 máy down
-**Maintenance**: Dễ dàng restart từng component
+**Phân tán Replica Sets:**
+```
+Shard1-RS: Node1 (Máy 2) + Node2 (Máy 3) + Node3 (Máy 4)
+Shard2-RS: Node1 (Máy 2) + Node2 (Máy 3) + Node3 (Máy 4)
+Shard3-RS: Node1 (Máy 2) + Node2 (Máy 3) + Node3 (Máy 4)
+Config-RS:  Node1 (Máy 2) + Node2 (Máy 3) + Node3 (Máy 4)
+```
+
+**Setup Time:** ~30 phút
+
+**High Availability:**
+- ✅ Tắt Máy 2 → Mỗi shard vẫn có 2/3 nodes (Máy 3, 4) → Data accessible
+- ✅ Tắt Máy 3 → Mỗi shard vẫn có 2/3 nodes (Máy 2, 4) → Data accessible
+- ✅ Tắt Máy 4 → Mỗi shard vẫn có 2/3 nodes (Máy 2, 3) → Data accessible
+- ✅ Automatic failover khi primary node down (~10-15 giây)
+---
+
+## 🚀 Test High Availability
+
+### Scenario 1: Tắt 1 máy (Cluster vẫn hoạt động)
+
+```powershell
+# 1. Test baseline - kiểm tra cluster health
+mongosh --port 27017 --eval "sh.status()"
+
+# 2. Tắt toàn bộ Máy 2 (Config1 + Node1 của tất cả shards)
+# Trên Máy 2: Stop tất cả mongod processes
+# Hoặc tắt máy/mất kết nối mạng
+
+# 3. Verify data vẫn accessible từ Máy 1
+mongosh --port 27017 --eval "db.getSiblingDB('socialnetwork').users.find().limit(5)"
+
+# 4. Kiểm tra từng shard - mỗi shard còn 2/3 nodes
+mongosh --host 192.168.1.102 --port 27023 --eval "rs.status()"  # Shard1
+mongosh --host 192.168.1.102 --port 27026 --eval "rs.status()"  # Shard2
+mongosh --host 192.168.1.102 --port 27029 --eval "rs.status()"  # Shard3
+
+# 5. Restart Máy 2 - tất cả nodes tự động rejoin
+```
+
+**Kết quả:**
+- ✅ Tất cả shards vẫn hoạt động (mỗi shard còn 2/3 nodes trên Máy 3,4)
+- ✅ Config servers vẫn có đa số (2/3 nodes)
+- ✅ Data VẪN accessible
+- ✅ Automatic failover khi primary down (~10-15 giây)
+
+### Scenario 2: Tắt 2 máy (Cluster read-only)
+
+```powershell
+# 1. Tắt Máy 2 và Máy 3
+# Trên mỗi máy: Stop tất cả mongod processes
+
+# 2. Verify cluster read-only
+mongosh --port 27017 --eval "db.getSiblingDB('socialnetwork').users.find().limit(5)"
+# → Có thể đọc (nếu cached)
+
+mongosh --port 27017 --eval "db.getSiblingDB('socialnetwork').users.insertOne({name: 'Test'})"
+# → KHÔNG thể ghi (chỉ còn 1/3 nodes)
+
+# 3. Restart Máy 2 hoặc Máy 3 - cluster hoạt động trở lại
+```
+
+**Kết quả:**
+- ❌ Mỗi shard chỉ còn 1/3 nodes → Không đạt majority
+- ❌ Không thể ghi (cần đa số nodes để bầu primary)
+- ⚠️ Có thể đọc cached data nhưng không reliable
+- ✅ Restart 1 trong 2 máy → Cluster hoạt động trở lại

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/neo4j.js";
 import logger from "../config/logger.js";
+import { withFailover, handleShardError } from "../config/failover.js";
 
 const router = express.Router();
 
@@ -18,9 +19,9 @@ router.post("/register", async (req, res) => {
     }
 
     // Kiểm tra user đã tồn tại
-    const existingUser = await User.findOne({
-      $or: [{ username }, { email }],
-    });
+    const existingUser = await withFailover(
+      User.findOne({ $or: [{ username }, { email }] })
+    );
 
     if (existingUser) {
       return res.status(400).json({
@@ -81,10 +82,7 @@ router.post("/register", async (req, res) => {
     });
   } catch (error) {
     logger.error("Error in register:", error);
-    res.status(500).json({
-      message: "Lỗi khi đăng ký",
-      error: error.message,
-    });
+    return handleShardError(error, res, 'đăng ký');
   }
 });
 
@@ -99,8 +97,10 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Tìm user
-    const user = await User.findOne({ username, isActive: true });
+    // Tìm user với read preference để xử lý shard offline
+    const user = await withFailover(
+      User.findOne({ username, isActive: true })
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -127,10 +127,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     logger.error("Error in login:", error);
-    res.status(500).json({
-      message: "Lỗi khi đăng nhập",
-      error: error.message,
-    });
+    return handleShardError(error, res, 'đăng nhập');
   }
 });
 

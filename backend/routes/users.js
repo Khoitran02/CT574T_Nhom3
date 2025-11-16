@@ -2,13 +2,16 @@ import express from "express";
 import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/database.js";
 import logger from "../config/logger.js";
+import { withFailover, handleShardError } from "../config/failover.js";
 
 const router = express.Router();
 
 // Lấy tất cả users
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find({ isActive: true }).select('-__v').sort({ createdAt: -1 });
+    const users = await withFailover(
+      User.find({ isActive: true }).select('-__v').sort({ createdAt: -1 })
+    );
     
     res.status(200).json({
       message: "Lấy danh sách users thành công",
@@ -16,10 +19,7 @@ router.get("/", async (req, res) => {
       total: users.length,
     });
   } catch (err) {
-    res.status(500).json({
-      message: "Lỗi khi lấy dữ liệu users",
-      error: err.message,
-    });
+    return handleShardError(err, res, 'lấy dữ liệu users');
   }
 });
 
@@ -31,9 +31,9 @@ router.post("/", async (req, res) => {
     logger.info('Creating user:', { username, email, name, role });
     
     // Kiểm tra user đã tồn tại
-    const existingUser = await User.findOne({ 
-      $or: [{ username }, { email }] 
-    });
+    const existingUser = await withFailover(
+      User.findOne({ $or: [{ username }, { email }] })
+    );
     
     if (existingUser) {
       logger.warn('User already exists:', existingUser.username);

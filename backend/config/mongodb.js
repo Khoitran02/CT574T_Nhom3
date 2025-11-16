@@ -15,6 +15,9 @@ export const connectMongoDB = async () => {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      readPreference: 'primaryPreferred',
+      retryWrites: true,
+      retryReads: true,
     }).asPromise();
     
     mongoConnection.on('connected', () => {
