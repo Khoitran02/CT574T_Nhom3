@@ -5,7 +5,7 @@ const postSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     content: {
@@ -26,6 +26,10 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    likedBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
     isPublished: {
       type: Boolean,
       default: true,

@@ -33,13 +33,13 @@ const UserStats = ({ userId }) => {
     <div className="flex items-center gap-4 text-sm text-gray-600">
       <div className="flex items-center gap-1 hover:text-blue-600 cursor-pointer transition-colors">
         <Users className="w-4 h-4" />
-        <span className="font-medium">{stats.stats?.followers || 0}</span>
+        <span className="font-medium">{stats.data?.followersCount || 0}</span>
         <span>Followers</span>
       </div>
       
       <div className="flex items-center gap-1 hover:text-blue-600 cursor-pointer transition-colors">
         <UserCheck className="w-4 h-4" />
-        <span className="font-medium">{stats.stats?.following || 0}</span>
+        <span className="font-medium">{stats.data?.followingCount || 0}</span>
         <span>Following</span>
       </div>
     </div>

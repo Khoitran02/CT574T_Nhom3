@@ -1,17 +1,23 @@
-import Navigation from './Navigation';
+import { Outlet } from 'react-router-dom';
+import Sidebar from './Sidebar';
 import Footer from './Footer';
+import ProtectedAdminRoute from '../Auth/ProtectedAdminRoute';
 
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navigation />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow">
-        <div className="px-4 py-6 sm:px-0">
-          {children}
+    <ProtectedAdminRoute>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <Outlet />
+            </div>
+          </main>
+          <Footer />
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </ProtectedAdminRoute>
   );
 };
 

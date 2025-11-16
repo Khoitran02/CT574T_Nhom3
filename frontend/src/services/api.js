@@ -35,7 +35,7 @@ export const usersAPI = {
   getAll: () => api.get('/users'),
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
-  update: (id, data) => api.put(`/users/${id}`, data),
+  update: (id, data) => api.patch(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   
   // Relationship endpoints
@@ -52,6 +52,7 @@ export const postsAPI = {
   create: (data) => api.post('/posts', data),
   update: (id, data) => api.put(`/posts/${id}`, data),
   delete: (id) => api.delete(`/posts/${id}`),
+  like: (postId, userId) => api.post(`/posts/${postId}/like`, { userId }),
   
   // Comments endpoints
   getComments: (postId) => api.get(`/posts/${postId}/comments`),
@@ -61,7 +62,10 @@ export const postsAPI = {
 // Comments API
 export const commentsAPI = {
   getAll: () => api.get('/comments'),
+  getByPostId: (postId) => api.get(`/comments/post/${postId}`),
+  create: (data) => api.post('/comments', data),
   delete: (id) => api.delete(`/comments/${id}`),
+  like: (commentId, userId) => api.post(`/comments/${commentId}/like`, { userId }),
 };
 
 // Neo4j API
@@ -77,6 +81,7 @@ export const relationshipsAPI = {
   unfollow: (followerId, followeeId) => api.post('/relationships/unfollow', { followerId, followeeId }),
   getFollowers: (userId) => api.get(`/relationships/followers/${userId}`),
   getFollowing: (userId) => api.get(`/relationships/following/${userId}`),
+  getFollowingIds: (userId) => api.get(`/relationships/following-ids/${userId}`),
   checkFollowStatus: (followerId, followeeId) => api.get(`/relationships/check/${followerId}/${followeeId}`),
   getMutualFriends: (userId1, userId2) => api.get(`/relationships/mutual/${userId1}/${userId2}`),
   getStats: (userId) => api.get(`/relationships/stats/${userId}`),
@@ -116,6 +121,19 @@ export const getFollowing = async (userId) => {
 // Database status API
 export const databaseAPI = {
   getStatus: () => api.get('/database-health'),
+};
+
+// Auth API
+export const authAPI = {
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  me: () => api.get('/auth/me'),
+  changePassword: (data) => api.post('/auth/change-password', data),
+};
+
+// Seed API
+export const seedAPI = {
+  createAdmin: () => api.post('/seed/admin'),
 };
 
 export default api;

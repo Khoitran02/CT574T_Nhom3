@@ -12,15 +12,31 @@ const commentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    authorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     postId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
       required: true,
     },
-    userId: {
-      type: String,
-      required: false,
+    parentCommentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Comment",
+      default: null,
     },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isVisible: {
       type: Boolean,
       default: true,

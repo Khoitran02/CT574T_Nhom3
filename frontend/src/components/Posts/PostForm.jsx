@@ -25,7 +25,7 @@ const PostForm = ({ post, onSubmit, isLoading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
           Tiêu đề
         </label>
         <input
@@ -38,7 +38,7 @@ const PostForm = ({ post, onSubmit, isLoading }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
           Nội dung
         </label>
         <textarea
@@ -51,7 +51,7 @@ const PostForm = ({ post, onSubmit, isLoading }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
           Tác giả
         </label>
         <input
@@ -64,7 +64,7 @@ const PostForm = ({ post, onSubmit, isLoading }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
           Tags (ngăn cách bằng dấu phẩy)
         </label>
         <input
@@ -77,7 +77,7 @@ const PostForm = ({ post, onSubmit, isLoading }) => {
       </div>
 
       <div>
-        <label className="flex items-center">
+        <label className="flex items-center text-left">
           <input
             type="checkbox"
             className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"

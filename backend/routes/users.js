@@ -25,9 +25,9 @@ router.get("/", async (req, res) => {
 // Tạo user mới
 router.post("/", async (req, res) => {
   try {
-    const { username, email, name, bio, avatar } = req.body;
+    const { username, email, name, bio, avatar, role } = req.body;
     
-    console.log('Creating user:', { username, email, name });
+    console.log('Creating user:', { username, email, name, role });
     
     // Kiểm tra user đã tồn tại
     const existingUser = await User.findOne({ 
@@ -41,35 +41,37 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const newUser = new User({ username, email, name, bio, avatar });
+    const newUser = new User({ username, email, name, bio, avatar, role: role || 'user' });
     const savedUser = await newUser.save();
     
     console.log('User saved to MongoDB:', savedUser._id);
 
-    // Tạo user node trong Neo4j
-    try {
-      const session = getNeo4jSession();
-      
-      await session.run(
-        `CREATE (u:User {
-          id: $id,
-          username: $username,
-          email: $email,
-          name: $name,
-          created: datetime()
-        })`,
-        {
-          id: savedUser._id.toString(),
-          username: savedUser.username,
-          email: savedUser.email,
-          name: savedUser.name,
-        }
-      );
-      
-      await session.close();
-      console.log('User created in Neo4j');
-    } catch (neo4jError) {
-      console.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+    // Tạo user node trong Neo4j (chỉ cho role user)
+    if (savedUser.role === 'user') {
+      try {
+        const session = getNeo4jSession();
+        
+        await session.run(
+          `CREATE (u:User {
+            id: $id,
+            username: $username,
+            email: $email,
+            name: $name,
+            created: datetime()
+          })`,
+          {
+            id: savedUser._id.toString(),
+            username: savedUser.username,
+            email: savedUser.email,
+            name: savedUser.name,
+          }
+        );
+        
+        await session.close();
+        console.log('User created in Neo4j');
+      } catch (neo4jError) {
+        console.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+      }
     }
 
     res.status(201).json({
@@ -142,6 +144,64 @@ router.put("/:id", async (req, res) => {
       await session.close();
     } catch (neo4jError) {
       console.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+    }
+
+    res.status(200).json({
+      message: "Cập nhật user thành công",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi cập nhật user", 
+      error: error.message 
+    });
+  }
+});
+
+// Cập nhật user (PATCH - partial update)
+router.patch("/:id", async (req, res) => {
+  try {
+    const { name, email, bio, avatar } = req.body;
+    const updateData = {};
+    
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (bio !== undefined) updateData.bio = bio;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password -__v');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "User không tồn tại",
+      });
+    }
+
+    // Cập nhật Neo4j (chỉ cho role user)
+    if (updatedUser.role === 'user') {
+      try {
+        const session = getNeo4jSession();
+        
+        await session.run(
+          `MATCH (u:User {id: $id})
+           SET u.name = $name,
+               u.email = $email,
+               u.updated = datetime()`,
+          {
+            id: updatedUser._id.toString(),
+            name: updatedUser.name,
+            email: updatedUser.email,
+          }
+        );
+        
+        await session.close();
+      } catch (neo4jError) {
+        console.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+      }
     }
 
     res.status(200).json({

@@ -8,13 +8,15 @@ const router = express.Router();
 // Lấy tất cả posts
 router.get("/", async (req, res) => {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find().sort({ createdAt: -1 });
     const data = posts.map((post) => ({
-      id: post._id,
-      title: post.title,
+      id: post._id.toString(),
       content: post.content,
       author: post.author,
+      userId: post.authorId?.toString(),
       createdAt: post.createdAt,
+      likes: post.likes || 0,
+      likedBy: post.likedBy?.map(id => id.toString()) || [],
     }));
 
     res.status(200).json({
@@ -33,7 +35,27 @@ router.get("/", async (req, res) => {
 // Tạo post mới
 router.post("/", async (req, res) => {
   try {
-    const newPost = new Post(req.body);
+    // Kiểm tra nếu là admin thì không cho tạo post
+    if (req.body.userId) {
+      const User = (await import('../models/users.model.js')).default;
+      const user = await User.findById(req.body.userId);
+      if (user && user.role === 'admin') {
+        return res.status(403).json({
+          message: "Admin không được tạo post. Chỉ user mới có thể tạo post.",
+        });
+      }
+    }
+
+    // Map userId từ request thành authorId cho model
+    const postData = {
+      content: req.body.content,
+      author: req.body.author,
+      authorId: req.body.userId,
+      tags: req.body.tags || [],
+      isPublished: req.body.isPublished !== undefined ? req.body.isPublished : true,
+    };
+
+    const newPost = new Post(postData);
     const savedPost = await newPost.save();
 
     // Tạo quan hệ trong Neo4j nếu có userId
@@ -42,11 +64,10 @@ router.post("/", async (req, res) => {
 
       await session.run(
         `MATCH (u:User {id: $userId}) 
-         CREATE (u)-[:CREATED {at: datetime()}]->(p:Post {id: $postId, title: $title})`,
+         CREATE (u)-[:CREATED {at: datetime()}]->(p:Post {id: $postId})`,
         {
           userId: req.body.userId,
           postId: savedPost._id.toString(),
-          title: savedPost.title,
         }
       );
       await session.close();
@@ -105,6 +126,54 @@ router.post("/:postId/comments", async (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       message: "Lỗi khi tạo comment", 
+      error: error.message 
+    });
+  }
+});
+
+// Like post - POST /api/posts/:postId/like
+router.post("/:postId/like", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId là bắt buộc" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post không tồn tại" });
+    }
+
+    // Kiểm tra đã like chưa
+    const alreadyLiked = post.likedBy?.includes(userId);
+    
+    if (alreadyLiked) {
+      // Unlike
+      post.likedBy = post.likedBy.filter(id => id.toString() !== userId);
+      post.likes = Math.max(0, (post.likes || 0) - 1);
+    } else {
+      // Like
+      if (!post.likedBy) post.likedBy = [];
+      post.likedBy.push(userId);
+      post.likes = (post.likes || 0) + 1;
+    }
+
+    await post.save();
+
+    res.status(200).json({
+      message: alreadyLiked ? "Unlike thành công" : "Like thành công",
+      data: {
+        postId,
+        likes: post.likes,
+        likedBy: post.likedBy,
+        isLiked: !alreadyLiked,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi like post", 
       error: error.message 
     });
   }

@@ -1,16 +1,23 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Users, FileText, Network, Home, Database } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Users, FileText, Network, Home, Database, LogOut } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Trang chủ' },
-    { path: '/users', icon: Users, label: 'Người dùng' },
-    { path: '/posts', icon: FileText, label: 'Bài viết' },
-    { path: '/network', icon: Network, label: 'Mạng xã hội' },
-    { path: '/database', icon: Database, label: 'Database Status' },
+    { path: '/admin', icon: Home, label: 'Trang chủ' },
+    { path: '/admin/users', icon: Users, label: 'Người dùng' },
+    { path: '/admin/posts', icon: FileText, label: 'Bài viết' },
+    { path: '/admin/network', icon: Network, label: 'Mạng xã hội' },
+    { path: '/admin/database', icon: Database, label: 'Database Status' },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('userId');
+    navigate('/login');
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -19,7 +26,7 @@ const Navigation = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <h1 className="text-xl font-bold text-gray-900">
-                CT574T - Social Network
+                CT574T - Admin Panel
               </h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -43,10 +50,17 @@ const Navigation = () => {
               })}
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
             <div className="text-sm text-gray-500">
               MongoDB + Neo4j Demo
             </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded"
+            >
+              <LogOut className="w-4 h-4" />
+              Đăng xuất
+            </button>
           </div>
         </div>
       </div>

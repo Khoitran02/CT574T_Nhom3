@@ -14,13 +14,24 @@ router.post("/follow", async (req, res) => {
       });
     }
 
+    // Kiểm tra nếu follower là admin thì không cho follow
+    const User = (await import('../models/users.model.js')).default;
+    const follower = await User.findById(followerId);
+    if (follower && follower.role === 'admin') {
+      return res.status(403).json({
+        message: "Admin không được follow user. Chỉ user mới có thể follow.",
+      });
+    }
+
     const session = getNeo4jSession();
 
-    // Tạo relationship FOLLOWS
+    // Sử dụng MERGE để tránh duplicate follow
     const result = await session.run(
       `MATCH (follower:User {id: $followerId}), (followee:User {id: $followeeId})
-       MERGE (follower)-[r:FOLLOWS {since: datetime()}]->(followee)
-       RETURN r`,
+       MERGE (follower)-[r:FOLLOWS]->(followee)
+       ON CREATE SET r.since = datetime()
+       RETURN r, 
+              CASE WHEN r.since = datetime() THEN true ELSE false END as isNew`,
       { followerId, followeeId }
     );
 
@@ -200,23 +211,52 @@ router.get("/mutual/:userId1/:userId2", async (req, res) => {
 
     const result = await session.run(
       `MATCH (u1:User {id: $userId1})-[:FOLLOWS]->(mutual:User)<-[:FOLLOWS]-(u2:User {id: $userId2})
-       RETURN mutual
-       ORDER BY mutual.name`,
+       RETURN mutual`,
       { userId1, userId2 }
     );
 
     await session.close();
 
-    const mutualFriends = result.records.map(record => record.get('mutual').properties);
+    const mutualFriends = result.records.map(record => 
+      record.get('mutual').properties
+    );
 
     res.status(200).json({
-      message: "Lấy mutual friends thành công",
+      message: "Lấy danh sách bạn chung thành công",
       data: mutualFriends,
       total: mutualFriends.length,
     });
   } catch (error) {
     res.status(500).json({ 
-      message: "Lỗi khi lấy mutual friends", 
+      message: "Lỗi khi lấy bạn chung", 
+      error: error.message 
+    });
+  }
+});
+
+// Lấy danh sách IDs của những người mà user đang follow - GET /api/relationships/following-ids/:userId
+router.get("/following-ids/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const session = getNeo4jSession();
+
+    const result = await session.run(
+      `MATCH (user:User {id: $userId})-[:FOLLOWS]->(following:User)
+       RETURN following.id as id`,
+      { userId }
+    );
+
+    await session.close();
+
+    const followingIds = result.records.map(record => record.get('id'));
+
+    res.status(200).json({
+      message: "Lấy danh sách following IDs thành công",
+      data: followingIds,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Lỗi khi lấy following IDs", 
       error: error.message 
     });
   }
@@ -241,8 +281,8 @@ router.get("/stats/:userId", async (req, res) => {
 
     const record = result.records[0];
     const stats = {
-      followers: record?.get('followerCount')?.toNumber() || 0,
-      following: record?.get('followingCount')?.toNumber() || 0,
+      followersCount: record?.get('followerCount')?.toNumber() || 0,
+      followingCount: record?.get('followingCount')?.toNumber() || 0,
     };
 
     res.status(200).json({

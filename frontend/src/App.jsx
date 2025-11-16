@@ -6,6 +6,11 @@ import Users from './pages/Users';
 import Posts from './pages/Posts';
 import SocialNetwork from './pages/SocialNetwork';
 import DatabaseStatus from './pages/DatabaseStatus';
+import AdminSettings from './pages/AdminSettings';
+import Login from './pages/Login';
+import AdminLogin from './pages/AdminLogin';
+import Feed from './pages/Feed';
+import Profile from './pages/Profile';
 import './App.css';
 
 // Create a client
@@ -23,15 +28,25 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/posts" element={<Posts />} />
-            <Route path="/network" element={<SocialNetwork />} />
-            <Route path="/database" element={<DatabaseStatus />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* User routes */}
+          <Route path="/" element={<Feed />} />
+          <Route path="/profile" element={<Profile />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="users" element={<Users />} />
+            <Route path="posts" element={<Posts />} />
+            <Route path="network" element={<SocialNetwork />} />
+            <Route path="database" element={<DatabaseStatus />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
+        </Routes>
       </Router>
     </QueryClientProvider>
   );

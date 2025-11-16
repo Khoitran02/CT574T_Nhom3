@@ -1,13 +1,36 @@
 import { Heart, MessageSquare, Edit, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { commentsAPI } from '../../services/api';
 
 const PostCard = ({ post, onEdit, onDelete }) => {
+  // Fetch comments để đếm
+  const { data: commentsData } = useQuery({
+    queryKey: ['comments', post.id],
+    queryFn: () => commentsAPI.getByPostId(post.id),
+  });
+
+  // Tính tổng số comments bao gồm replies
+  const countAllComments = (comments) => {
+    let total = 0;
+    const countRecursive = (commentList) => {
+      commentList.forEach(comment => {
+        total++;
+        if (comment.replies && comment.replies.length > 0) {
+          countRecursive(comment.replies);
+        }
+      });
+    };
+    countRecursive(comments);
+    return total;
+  };
+
+  const comments = commentsData?.data?.data || [];
+  const totalCommentsCount = countAllComments(comments);
+
   return (
     <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            {post.title}
-          </h3>
           <p className="text-sm text-gray-500">
             by {post.author} • {new Date(post.createdAt).toLocaleDateString('vi-VN')}
           </p>
@@ -29,7 +52,7 @@ const PostCard = ({ post, onEdit, onDelete }) => {
         </div>
       </div>
 
-      <p className="text-gray-700 mb-4 line-clamp-3">{post.content}</p>
+      <p className="text-gray-700 mb-4 line-clamp-3 text-left">{post.content}</p>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -39,7 +62,7 @@ const PostCard = ({ post, onEdit, onDelete }) => {
           </div>
           <div className="flex items-center text-gray-500">
             <MessageSquare className="w-4 h-4 mr-1" />
-            <span>0 comments</span>
+            <span>{totalCommentsCount} comments</span>
           </div>
         </div>
         
