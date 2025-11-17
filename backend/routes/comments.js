@@ -1,18 +1,33 @@
 import express from "express";
 import Comment from "../models/comments.model.js";
+import { upload } from "../config/upload.js";
 
 const router = express.Router();
 
-// Lấy tất cả comments - GET /api/comments
+// Lấy tất cả comments với phân trang - GET /api/comments
 router.get("/", async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    
+    const total = await Comment.countDocuments({ isVisible: true });
     const comments = await Comment.find({ isVisible: true })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       message: "Lấy tất cả comments thành công",
       data: comments,
-      total: comments.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -67,8 +82,8 @@ router.get("/post/:postId", async (req, res) => {
   }
 });
 
-// Tạo comment mới - POST /api/comments
-router.post("/", async (req, res) => {
+// Tạo comment mới với hỗ trợ upload ảnh - POST /api/comments
+router.post("/", upload.array('images', 3), async (req, res) => {
   try {
     const { content, author, authorId, postId, parentCommentId } = req.body;
 
@@ -78,12 +93,22 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Xử lý uploaded images
+    const imagePaths = req.files ? req.files.map(file => `/uploads/user-images/${file.filename}`) : [];
+
+    // Parse mentions và emojis từ JSON string nếu có
+    const mentions = req.body.mentions ? JSON.parse(req.body.mentions) : [];
+    const emojis = req.body.emojis ? JSON.parse(req.body.emojis) : [];
+
     const newComment = new Comment({
       content,
       author,
       authorId,
       postId,
       parentCommentId: parentCommentId || null,
+      images: imagePaths,
+      mentions: mentions,
+      emojis: emojis,
     });
 
     const savedComment = await newComment.save();

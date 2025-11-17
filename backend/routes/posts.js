@@ -2,13 +2,45 @@ import express from "express";
 import Post from "../models/posts.model.js";
 import Comment from "../models/comments.model.js";
 import { getNeo4jSession } from "../config/database.js";
+import { upload } from "../config/upload.js";
 
 const router = express.Router();
 
-// Lấy tất cả posts
+// Lấy tất cả posts với phân trang và bộ lọc
 router.get("/", async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    // Build filter query
+    const filter = {};
+    
+    // Filter by author name (case-insensitive partial match)
+    if (req.query.author) {
+      filter.author = { $regex: req.query.author, $options: 'i' };
+    }
+    
+    // Filter by date range
+    if (req.query.fromDate || req.query.toDate) {
+      filter.createdAt = {};
+      if (req.query.fromDate) {
+        filter.createdAt.$gte = new Date(req.query.fromDate);
+      }
+      if (req.query.toDate) {
+        // Add 1 day to include the entire toDate
+        const toDate = new Date(req.query.toDate);
+        toDate.setDate(toDate.getDate() + 1);
+        filter.createdAt.$lt = toDate;
+      }
+    }
+    
+    const total = await Post.countDocuments(filter);
+    const posts = await Post.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
     const data = posts.map((post) => ({
       id: post._id.toString(),
       content: post.content,
@@ -17,12 +49,22 @@ router.get("/", async (req, res) => {
       createdAt: post.createdAt,
       likes: post.likes || 0,
       likedBy: post.likedBy?.map(id => id.toString()) || [],
+      images: post.images || [],
+      mentions: post.mentions || [],
+      emojis: post.emojis || [],
     }));
 
     res.status(200).json({
       message: "Lấy dữ liệu bài viết thành công",
       data: data,
-      total: posts.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -32,8 +74,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Tạo post mới
-router.post("/", async (req, res) => {
+// Tạo post mới với hỗ trợ upload ảnh
+router.post("/", upload.array('images', 5), async (req, res) => {
   try {
     // Kiểm tra nếu là admin thì không cho tạo post
     if (req.body.userId) {
@@ -46,12 +88,22 @@ router.post("/", async (req, res) => {
       }
     }
 
+    // Xử lý uploaded images
+    const imagePaths = req.files ? req.files.map(file => `/uploads/user-images/${file.filename}`) : [];
+
+    // Parse mentions và emojis từ JSON string nếu có
+    const mentions = req.body.mentions ? JSON.parse(req.body.mentions) : [];
+    const emojis = req.body.emojis ? JSON.parse(req.body.emojis) : [];
+
     // Map userId từ request thành authorId cho model
     const postData = {
       content: req.body.content,
       author: req.body.author,
       authorId: req.body.userId,
       tags: req.body.tags || [],
+      images: imagePaths,
+      mentions: mentions,
+      emojis: emojis,
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished : true,
     };
 
@@ -82,19 +134,34 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Lấy comments của một post - GET /api/posts/:postId/comments
+// Lấy comments của một post với phân trang - GET /api/posts/:postId/comments
 router.get("/:postId/comments", async (req, res) => {
   try {
     const { postId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    const total = await Comment.countDocuments({ postId, isVisible: true });
     const comments = await Comment.find({ 
       postId, 
       isVisible: true 
-    }).sort({ createdAt: -1 });
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 
     res.status(200).json({
       message: "Lấy comments thành công",
       data: comments,
-      total: comments.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
     });
   } catch (err) {
     res.status(500).json({

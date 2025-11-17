@@ -5,15 +5,31 @@ import logger from "../config/logger.js";
 
 const router = express.Router();
 
-// Lấy tất cả users
+// Lấy tất cả users với phân trang
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find({ isActive: true }).select('-__v').sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    const total = await User.countDocuments({ isActive: true });
+    const users = await User.find({ isActive: true })
+      .select('-__v')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     
     res.status(200).json({
       message: "Lấy danh sách users thành công",
       data: users,
-      total: users.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
     });
   } catch (err) {
     res.status(500).json({

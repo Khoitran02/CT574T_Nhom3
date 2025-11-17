@@ -4,6 +4,48 @@ import { Reply, Heart } from 'lucide-react';
 import { commentsAPI } from '../../services/api';
 import CommentForm from './CommentForm';
 
+// Helper function to render content with clickable mentions
+const renderContentWithMentions = (content, mentions = []) => {
+  if (!mentions || mentions.length === 0) return content;
+
+  const parts = [];
+  let lastIndex = 0;
+
+  const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
+
+  sortedMentions.forEach((mention) => {
+    const mentionText = `@${mention.username}`;
+    const index = content.indexOf(mentionText, lastIndex);
+    
+    if (index !== -1) {
+      if (index > lastIndex) {
+        parts.push(content.substring(lastIndex, index));
+      }
+      
+      parts.push(
+        <span
+          key={`mention-${mention.position}`}
+          className="text-blue-600 font-medium hover:underline cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Navigate to user:', mention.userId);
+          }}
+        >
+          {mentionText}
+        </span>
+      );
+      
+      lastIndex = index + mentionText.length;
+    }
+  });
+
+  if (lastIndex < content.length) {
+    parts.push(content.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : content;
+};
+
 const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const queryClient = useQueryClient();
@@ -64,7 +106,27 @@ const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
                 {new Date(comment.createdAt).toLocaleDateString('vi-VN')}
               </span>
             </div>
-            <p className="text-gray-700 text-sm">{comment.content}</p>
+            <p className="text-gray-700 text-sm whitespace-pre-wrap">
+              {renderContentWithMentions(comment.content, comment.mentions)}
+            </p>
+            
+            {/* Comment Images */}
+            {comment.images && comment.images.length > 0 && (
+              <div className="mt-2 flex gap-2">
+                {comment.images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={`http://localhost:3001${image}`}
+                    alt={`Comment image ${index + 1}`}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded border"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            
             <div className="mt-2 flex items-center gap-3">
               <button
                 onClick={handleLikeComment}
@@ -92,6 +154,7 @@ const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
           <CommentForm
             onSubmit={handleReply}
             placeholder={`Trả lời ${comment.author}... (Nhấn ESC để hủy)`}
+            currentUser={currentUser}
           />
         </div>
       )}

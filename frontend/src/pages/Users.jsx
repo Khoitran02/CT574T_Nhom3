@@ -5,6 +5,7 @@ import { User, Plus } from 'lucide-react';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import ErrorMessage from '../components/UI/ErrorMessage';
 import Modal from '../components/UI/Modal';
+import Pagination from '../components/UI/Pagination';
 import UserStatsGrid from '../components/Users/UserStatsGrid';
 import UserList from '../components/Users/UserList';
 import UserForm from '../components/Users/UserForm';
@@ -12,12 +13,15 @@ import UserForm from '../components/Users/UserForm';
 const Users = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
   const queryClient = useQueryClient();
 
   const { data: usersResponse, isLoading, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: usersAPI.getAll,
+    queryKey: ['users', page, limit],
+    queryFn: () => usersAPI.getAll({ page, limit }),
     retry: 1,
+    keepPreviousData: true,
   });
 
   const createUserMutation = useMutation({
@@ -44,6 +48,7 @@ const Users = () => {
   });
 
   const users = usersResponse?.data?.data || [];
+  const pagination = usersResponse?.data?.pagination || {};
   const currentUserId = users[0]?.user_id;
 
   const handleSubmit = (formData) => {
@@ -59,6 +64,11 @@ const Users = () => {
     setEditingUser(null);
   };
 
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorMessage title="Lỗi khi tải danh sách users" message={error.message} />;
 
@@ -72,6 +82,7 @@ const Users = () => {
           </h1>
           <p className="text-gray-600 mt-1">
             Danh sách người dùng trong hệ thống MongoDB + Neo4j
+            {pagination.total && ` (Tổng: ${pagination.total} users)`}
           </p>
         </div>
         <button
@@ -83,13 +94,21 @@ const Users = () => {
         </button>
       </div>
 
-      <UserStatsGrid users={users} />
+      <UserStatsGrid users={users} total={pagination.total} />
       
       <UserList 
         users={users}
         currentUserId={currentUserId}
         onEdit={setEditingUser}
         onDelete={(id) => deleteUserMutation.mutate(id)}
+      />
+
+      <Pagination
+        currentPage={pagination.page || 1}
+        totalPages={pagination.totalPages || 1}
+        hasNext={pagination.hasNext}
+        hasPrev={pagination.hasPrev}
+        onPageChange={handlePageChange}
       />
 
       <Modal

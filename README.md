@@ -156,11 +156,50 @@ npm run dev          # Start với nodemon (auto-reload)
 npm run test-mongodb # Test MongoDB connection
 npm run test-neo4j   # Test Neo4j connection
 
+# Database Seeder scripts (cd backend)
+npm run seed:demo    # Demo: 10 users, 100 posts (~2s)
+npm run seed:quick   # Quick: 100 users, 5K posts (~20s)
+npm run seed:large   # Large: 5000 users, 10M posts (~45m)
+npm run seed:clean   # Clean: Remove all data
+
 # Frontend scripts (cd frontend)
 npm run dev          # Start dev server (Vite)
 npm run build        # Build production
 npm run preview      # Preview production build
 ```
+
+## Database Seeding 🌱
+
+Hệ thống có **4 seeders** để import dữ liệu test:
+
+| Seeder | Users | Posts | Time | Use Case |
+|--------|-------|-------|------|----------|
+| **Demo** | 10 | 100 | 1-2s | Quick verification |
+| **Quick** | 100 | 5,000 | 15-30s | Development |
+| **Large** | 5,000 | 10,000,000 | 30-60m | Load testing |
+| **Clean** | - | - | 5s | Database cleanup |
+
+### Quick Start với Seeder
+```bash
+cd backend
+
+# 1. Verify setup
+npm run seed:demo
+
+# 2. Load development data
+npm run seed:quick
+
+# 3. Start server
+npm run dev
+```
+
+**Default credentials:** 
+- Username: `user1`, `user2`, etc.
+- Password: `password123`
+
+📚 **Full Documentation:** [`SEEDER_GUIDE.md`](SEEDER_GUIDE.md)
+
+---
 
 ## Tính năng chính
 

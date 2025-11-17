@@ -32,7 +32,7 @@ api.interceptors.response.use(
 
 // Users API
 export const usersAPI = {
-  getAll: () => api.get('/users'),
+  getAll: (params = {}) => api.get('/users', { params }),
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.patch(`/users/${id}`, data),
@@ -47,23 +47,35 @@ export const usersAPI = {
 
 // Posts API
 export const postsAPI = {
-  getAll: () => api.get('/posts'),
+  getAll: (params = {}) => api.get('/posts', { params }),
   getById: (id) => api.get(`/posts/${id}`),
-  create: (data) => api.post('/posts', data),
+  create: (formData) => {
+    return api.post('/posts', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   update: (id, data) => api.put(`/posts/${id}`, data),
   delete: (id) => api.delete(`/posts/${id}`),
   like: (postId, userId) => api.post(`/posts/${postId}/like`, { userId }),
   
   // Comments endpoints
-  getComments: (postId) => api.get(`/posts/${postId}/comments`),
+  getComments: (postId, params = {}) => api.get(`/posts/${postId}/comments`, { params }),
   addComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
 };
 
 // Comments API
 export const commentsAPI = {
-  getAll: () => api.get('/comments'),
+  getAll: (params = {}) => api.get('/comments', { params }),
   getByPostId: (postId) => api.get(`/comments/post/${postId}`),
-  create: (data) => api.post('/comments', data),
+  create: (formData) => {
+    return api.post('/comments', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   delete: (id) => api.delete(`/comments/${id}`),
   like: (commentId, userId) => api.post(`/comments/${commentId}/like`, { userId }),
 };
@@ -79,11 +91,12 @@ export const neo4jAPI = {
 export const relationshipsAPI = {
   follow: (followerId, followeeId) => api.post('/relationships/follow', { followerId, followeeId }),
   unfollow: (followerId, followeeId) => api.post('/relationships/unfollow', { followerId, followeeId }),
-  getFollowers: (userId) => api.get(`/relationships/followers/${userId}`),
-  getFollowing: (userId) => api.get(`/relationships/following/${userId}`),
+  getFollowers: (userId, params = {}) => api.get(`/relationships/followers/${userId}`, { params }),
+  getFollowing: (userId, params = {}) => api.get(`/relationships/following/${userId}`, { params }),
   getFollowingIds: (userId) => api.get(`/relationships/following-ids/${userId}`),
   checkFollowStatus: (followerId, followeeId) => api.get(`/relationships/check/${followerId}/${followeeId}`),
   getMutualFriends: (userId1, userId2) => api.get(`/relationships/mutual/${userId1}/${userId2}`),
+  getMutualFollowers: (userId, params = {}) => api.get(`/relationships/mutual-followers/${userId}`, { params }),
   getStats: (userId) => api.get(`/relationships/stats/${userId}`),
 };
 

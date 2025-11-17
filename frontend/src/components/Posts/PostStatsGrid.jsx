@@ -1,8 +1,8 @@
-import { FileText, Heart, MessageSquare, Edit } from 'lucide-react';
+import { FileText, ThumbsUp, MessageSquare, Heart, Edit } from 'lucide-react';
 import StatCard from '../UI/StatCard';
 
-const PostStatsGrid = ({ posts }) => {
-  const totalPosts = posts.length;
+const PostStatsGrid = ({ posts, total }) => {
+  const totalPosts = total || posts.length;
   const totalLikes = posts.reduce((sum, post) => sum + (post.likes || 0), 0);
   const publishedPosts = posts.filter(p => p.isPublished).length;
 

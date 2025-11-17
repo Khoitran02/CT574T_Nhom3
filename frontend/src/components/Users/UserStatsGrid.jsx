@@ -1,8 +1,8 @@
 import { UserCheck, User, Edit } from 'lucide-react';
 import StatCard from '../UI/StatCard';
 
-const UserStatsGrid = ({ users }) => {
-  const totalUsers = users.length;
+const UserStatsGrid = ({ users, total }) => {
+  const totalUsers = total || users.length;
   const activeUsers = users.filter(u => u.isActive).length;
   const dbStatus = users.length > 0 ? 'MongoDB' : 'N/A';
 

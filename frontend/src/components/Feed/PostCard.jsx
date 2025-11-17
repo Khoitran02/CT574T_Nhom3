@@ -5,6 +5,53 @@ import { commentsAPI, postsAPI } from '../../services/api';
 import CommentList from './CommentList';
 import CommentForm from './CommentForm';
 
+// Helper function to render content with clickable mentions
+const renderContentWithMentions = (content, mentions = []) => {
+  if (!mentions || mentions.length === 0) return content;
+
+  const parts = [];
+  let lastIndex = 0;
+
+  // Sort mentions by position
+  const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
+
+  sortedMentions.forEach((mention) => {
+    const mentionText = `@${mention.username}`;
+    const index = content.indexOf(mentionText, lastIndex);
+    
+    if (index !== -1) {
+      // Add text before mention
+      if (index > lastIndex) {
+        parts.push(content.substring(lastIndex, index));
+      }
+      
+      // Add clickable mention
+      parts.push(
+        <span
+          key={`mention-${mention.position}`}
+          className="text-blue-600 font-medium hover:underline cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: Navigate to user profile
+            console.log('Navigate to user:', mention.userId);
+          }}
+        >
+          {mentionText}
+        </span>
+      );
+      
+      lastIndex = index + mentionText.length;
+    }
+  });
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push(content.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : content;
+};
+
 const PostCard = ({ post, currentUser }) => {
   const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(false);
@@ -40,7 +87,9 @@ const PostCard = ({ post, currentUser }) => {
   const likeMutation = useMutation({
     mutationFn: ({ postId, userId }) => postsAPI.like(postId, userId),
     onSuccess: () => {
+      // Invalidate all query keys that might contain posts
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
     },
   });
 
@@ -49,10 +98,22 @@ const PostCard = ({ post, currentUser }) => {
   const isLiked = post.likedBy?.includes(currentUser?._id);
   const likesCount = post.likes || 0;
 
-  const handleAddComment = (content, parentCommentId = null) => {
-    if (currentUser && content.trim()) {
+  const handleAddComment = (contentOrFormData, parentCommentId = null) => {
+    if (!currentUser) return;
+    
+    // Kiểm tra xem có phải FormData không
+    if (contentOrFormData instanceof FormData) {
+      contentOrFormData.append('author', currentUser.name);
+      contentOrFormData.append('authorId', currentUser._id);
+      contentOrFormData.append('postId', post.id);
+      if (parentCommentId) {
+        contentOrFormData.append('parentCommentId', parentCommentId);
+      }
+      createCommentMutation.mutate(contentOrFormData);
+    } else if (typeof contentOrFormData === 'string' && contentOrFormData.trim()) {
+      // Content đơn giản
       createCommentMutation.mutate({
-        content,
+        content: contentOrFormData,
         author: currentUser.name,
         authorId: currentUser._id,
         postId: post.id,
@@ -83,7 +144,28 @@ const PostCard = ({ post, currentUser }) => {
       </div>
 
       {/* Post Content */}
-      <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 text-left">{post.content}</p>
+      <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 text-left whitespace-pre-wrap">
+        {renderContentWithMentions(post.content, post.mentions)}
+      </p>
+
+      {/* Post Images */}
+      {post.images && post.images.length > 0 && (
+        <div className={`mb-3 sm:mb-4 grid gap-2 ${
+          post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+        }`}>
+          {post.images.map((image, index) => (
+            <img
+              key={index}
+              src={`http://localhost:3001${image}`}
+              alt={`Post image ${index + 1}`}
+              className="w-full h-48 object-cover rounded-lg border border-gray-200"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Post Actions */}
       <div className="flex items-center gap-3 sm:gap-4 text-gray-500 border-t pt-3 sm:pt-4">
@@ -109,7 +191,10 @@ const PostCard = ({ post, currentUser }) => {
       {/* Comments Section */}
       {showComments && (
         <div className="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
-          <CommentForm onSubmit={(content) => handleAddComment(content)} />
+          <CommentForm 
+            onSubmit={(content) => handleAddComment(content)} 
+            currentUser={currentUser}
+          />
           <CommentList
             comments={comments}
             onReply={handleAddComment}

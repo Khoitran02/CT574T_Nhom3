@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 import { usersAPI, relationshipsAPI } from '../services/api';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Modal from '../components/UI/Modal';
+import Pagination from '../components/UI/Pagination';
 import SearchBar from '../components/Social/SearchBar';
 import UserGrid from '../components/Social/UserGrid';
 
@@ -13,10 +14,12 @@ const SocialNetwork = () => {
   const [selectedUserForInfo, setSelectedUserForInfo] = useState(null);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(12);
 
   const { data: usersResponse, isLoading: usersLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: usersAPI.getAll,
+    queryKey: ['users', page, limit],
+    queryFn: () => usersAPI.getAll({ page, limit }),
   });
 
   const { data: followersDataModal, isLoading: followersLoadingModal } = useQuery({
@@ -44,6 +47,7 @@ const SocialNetwork = () => {
   };
 
   const users = usersResponse?.data?.data || [];
+  const pagination = usersResponse?.data?.pagination || {};
   const transformedUsers = transformUsers(users);
   
   // Transform Neo4j followers/following data
@@ -60,10 +64,13 @@ const SocialNetwork = () => {
   const followingListModal = transformNeo4jUsers(followingDataModal?.data?.data);
   const currentUserId = transformedUsers[0]?.user_id;
 
-  const filteredUsers = transformedUsers.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Client-side filtering cho search
+  const filteredUsers = searchTerm
+    ? transformedUsers.filter(user =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : transformedUsers;
 
   const handleViewFollowers = (userId) => {
     setSelectedUserId(userId);
@@ -73,6 +80,12 @@ const SocialNetwork = () => {
   const handleViewFollowing = (userId) => {
     setSelectedUserId(userId);
     setShowFollowingModal(true);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    setSearchTerm(''); // Clear search when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (usersLoading) return <LoadingSpinner />;
@@ -104,6 +117,19 @@ const SocialNetwork = () => {
           emptyMessage={searchTerm ? 'Không tìm thấy users nào' : 'Chưa có users nào'}
         />
       </div>
+
+      {/* Pagination - only show when not searching */}
+      {!searchTerm && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={pagination.page || 1}
+            totalPages={pagination.totalPages || 1}
+            hasNext={pagination.hasNext}
+            hasPrev={pagination.hasPrev}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
 
       {/* Followers Modal */}
       <Modal

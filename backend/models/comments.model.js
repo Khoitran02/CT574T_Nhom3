@@ -37,6 +37,22 @@ const commentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    images: [{
+      type: String,
+      trim: true,
+    }],
+    mentions: [{
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      username: String,
+      position: Number,
+    }],
+    emojis: [{
+      emoji: String,
+      position: Number,
+    }],
     isVisible: {
       type: Boolean,
       default: true,

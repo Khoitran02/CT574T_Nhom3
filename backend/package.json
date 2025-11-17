@@ -6,7 +6,12 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "test-neo4j": "node test-neo4j.js",
-    "test-mongodb": "node test-mongodb.js"
+    "test-mongodb": "node test-mongodb.js",
+    "generate:images": "node scripts/generate-sample-images.js",
+    "seed:demo": "node scripts/seed-demo.js",
+    "seed:quick": "node scripts/seed-quick.js",
+    "seed:large": "node scripts/seed-large-dataset.js",
+    "seed:clean": "node scripts/clean-database.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -18,6 +23,7 @@
     "jade": "~1.11.0",
     "mongoose": "^8.19.2",
     "morgan": "~1.9.1",
+    "multer": "^2.0.2",
     "neo4j-driver": "^6.0.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0"
