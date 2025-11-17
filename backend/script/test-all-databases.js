@@ -1,6 +1,6 @@
 // test-all-databases.js
 // Script để test kết nối tất cả databases
-import { connectAllDatabases, testAllConnections, closeAllConnections } from './config/database.js';
+import { connectAllDatabases, testAllConnections, closeAllConnections } from '../config/database.js';
 
 async function testAllDatabaseConnections() {
   try {
