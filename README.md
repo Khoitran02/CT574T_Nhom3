@@ -73,9 +73,9 @@ npm run install-all
 #### 3. Setup và Seed
 ```powershell
 cd backend
-node script/setup-sharding.js
+node scripts/setup-sharding.js
 // tạo admin user
-npm run seed 
+npm run seed:admin
 ```
 
 #### 4. Setup Neo4j
@@ -143,16 +143,16 @@ npm run test-databases # Test kết nối databases
 # Backend scripts (cd backend)
 npm start             # Start backend server
 npm run dev          # Start với nodemon (auto-reload)
-npm run seed         # Seed admin user
+npm run seed:admin         # Seed admin user
 npm run test-mongodb # Test MongoDB connection
 npm run test-neo4j   # Test Neo4j connection
 npm run test-failover # Test shard failover
 
 # MongoDB Sharding scripts (cd backend)
-node script/setup-sharding.js              # Setup sharding cho collections
-node script/check-shard-location.js <collection> <id>  # Kiểm tra record ở shard nào
-node script/check-shard-location.js --direct <collection> <id>  # Query trực tiếp shards
-node script/check-shard-location.js --list-shards      # Liệt kê shards
+node scripts/setup-sharding.js              # Setup sharding cho collections
+node scripts/check-shard-location.js <collection> <id>  # Kiểm tra record ở shard nào
+node scripts/check-shard-location.js --direct <collection> <id>  # Query trực tiếp shards
+node scripts/check-shard-location.js --list-shards      # Liệt kê shards
 
 # High Availability Testing (script/)
 .\script\start-mongodb-cluster-ha.ps1         # Start HA cluster (13 processes)
@@ -179,7 +179,7 @@ npm run preview      # Preview production build
 
 **Kiểm tra sharding:**
 ```bash
-node backend/check-shard-location.js --direct users <user_id>
+node backend/scripts/check-shard-location.js --direct users <user_id>
 ```
 
 **Test Shard Failover:**
