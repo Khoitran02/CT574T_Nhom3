@@ -11,13 +11,13 @@ const FollowButton = ({ currentUserId, targetUserId }) => {
     queryKey: ['followingIds', currentUserId],
     queryFn: async () => {
       const response = await relationshipsAPI.getFollowingIds(currentUserId);
-      return response.data.data || [];
+      return response.data || [];
     },
     enabled: !!currentUserId,
     staleTime: 30000, // Cache for 30 seconds
   });
   
-  const isFollowing = followingIds.includes(targetUserId);
+  const isFollowing = Array.isArray(followingIds) && followingIds.includes(targetUserId);
   
   // Follow mutation
   const followMutation = useMutation({

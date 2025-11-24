@@ -60,6 +60,94 @@ router.post("/follow", async (req, res) => {
   }
 });
 
+// Unfollow user - DELETE /api/relationships/unfollow
+router.delete("/unfollow", async (req, res) => {
+  try {
+    const { followerId, followeeId } = req.body;
+
+    if (!followerId || !followeeId) {
+      return res.status(400).json({
+        message: "Thiếu followerId hoặc followeeId",
+      });
+    }
+
+    const session = getNeo4jSession();
+
+    // Xóa relationship
+    const result = await session.run(
+      `MATCH (follower:User {id: $followerId})-[r:FOLLOWS]->(followee:User {id: $followeeId})
+       DELETE r
+       RETURN follower, followee`,
+      { followerId, followeeId }
+    );
+
+    await session.close();
+
+    if (result.records.length === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy relationship để xóa",
+      });
+    }
+
+    res.status(200).json({
+      message: "Unfollow thành công",
+      data: {
+        followerId,
+        followeeId,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi unfollow",
+      error: error.message,
+    });
+  }
+});
+
+// Remove follower - DELETE /api/relationships/remove-follower
+router.delete("/remove-follower", async (req, res) => {
+  try {
+    const { userId, followerId } = req.body;
+
+    if (!userId || !followerId) {
+      return res.status(400).json({
+        message: "Thiếu userId hoặc followerId",
+      });
+    }
+
+    const session = getNeo4jSession();
+
+    // Xóa relationship (follower follows me)
+    const result = await session.run(
+      `MATCH (follower:User {id: $followerId})-[r:FOLLOWS]->(user:User {id: $userId})
+       DELETE r
+       RETURN follower, user`,
+      { userId, followerId }
+    );
+
+    await session.close();
+
+    if (result.records.length === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy follower để xóa",
+      });
+    }
+
+    res.status(200).json({
+      message: "Xóa follower thành công",
+      data: {
+        userId,
+        followerId,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi xóa follower",
+      error: error.message,
+    });
+  }
+});
+
 // Lấy danh sách followers của user với phân trang - GET /api/relationships/followers/:userId
 router.get("/followers/:userId", async (req, res) => {
   try {
@@ -84,7 +172,7 @@ router.get("/followers/:userId", async (req, res) => {
        ORDER BY r.since DESC
        SKIP $skip
        LIMIT $limit`,
-      { userId, skip: skip, limit: limit }
+      { userId, skip: neo4j.int(skip), limit: neo4j.int(limit) }
     );
 
     await session.close();
@@ -138,7 +226,7 @@ router.get("/following/:userId", async (req, res) => {
        ORDER BY r.since DESC
        SKIP $skip
        LIMIT $limit`,
-      { userId, skip: skip, limit: limit }
+      { userId, skip: neo4j.int(skip), limit: neo4j.int(limit) }
     );
 
     await session.close();

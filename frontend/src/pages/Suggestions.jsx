@@ -130,12 +130,16 @@ const Suggestions = () => {
 
 // Suggestion Card Component
 const SuggestionCard = ({ suggestion, onFollow, isFollowed }) => {
+  const navigate = useNavigate();
   const user = suggestion.user;
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
       {/* User Avatar */}
-      <div className="flex items-center justify-center mb-4">
+      <div 
+        className="flex items-center justify-center mb-4 cursor-pointer"
+        onClick={() => navigate(`/profile/${user.id}`)}
+      >
         <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
           {user.name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || '?'}
         </div>
@@ -143,7 +147,10 @@ const SuggestionCard = ({ suggestion, onFollow, isFollowed }) => {
 
       {/* User Info */}
       <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+        <h3 
+          className="text-lg font-semibold text-gray-900 mb-1 hover:text-blue-600 cursor-pointer"
+          onClick={() => navigate(`/profile/${user.id}`)}
+        >
           {user.name || user.username}
         </h3>
         <p className="text-sm text-gray-500 mb-2">@{user.username}</p>

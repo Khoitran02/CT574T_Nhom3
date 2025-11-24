@@ -36,13 +36,10 @@ export const usersAPI = {
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.patch(`/users/${id}`, data),
+  updateAvatar: (id, formData) => api.patch(`/users/${id}/avatar`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   delete: (id) => api.delete(`/users/${id}`),
-  
-  // Relationship endpoints
-  follow: (id, followerId) => api.post(`/users/${id}/follow`, { followerId }),
-  unfollow: (id, followerId) => api.delete(`/users/${id}/follow`, { data: { followerId } }),
-  getFollowers: (id) => api.get(`/users/${id}/followers`),
-  getFollowing: (id) => api.get(`/users/${id}/following`),
 };
 
 // Posts API
@@ -90,6 +87,8 @@ export const neo4jAPI = {
 // Relationships API (Neo4j Social Network)
 export const relationshipsAPI = {
   follow: (followerId, followeeId) => api.post('/relationships/follow', { followerId, followeeId }),
+  unfollow: (followerId, followeeId) => api.delete('/relationships/unfollow', { data: { followerId, followeeId } }),
+  removeFollower: (userId, followerId) => api.delete('/relationships/remove-follower', { data: { userId, followerId } }),
   getFollowers: (userId, params = {}) => api.get(`/relationships/followers/${userId}`, { params }),
   getFollowing: (userId, params = {}) => api.get(`/relationships/following/${userId}`, { params }),
   getFollowingIds: (userId) => api.get(`/relationships/following-ids/${userId}`),

@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { UserPlus, UserCheck, ArrowRight } from 'lucide-react';
 import { relationshipsAPI } from '../../services/api';
 
 const UserSuggestions = ({ currentUserId, onFollow, followingIds = [] }) => {
+  const navigate = useNavigate();
   // Fetch Neo4j suggestions
   const { data: suggestionsData, isLoading } = useQuery({
     queryKey: ['sidebar-suggestions', currentUserId],
@@ -35,12 +37,15 @@ const UserSuggestions = ({ currentUserId, onFollow, followingIds = [] }) => {
           
           return (
             <div key={user.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div 
+                className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:bg-gray-50 rounded p-1 -m-1"
+                onClick={() => navigate(`/profile/${user.id}`)}
+              >
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                   {user.name?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="font-medium text-gray-900 truncate hover:text-blue-600">{user.name}</p>
                   <p className="text-xs text-gray-500 truncate">
                     {suggestion.mutualFollowing} bạn chung
                   </p>
