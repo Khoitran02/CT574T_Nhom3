@@ -1,4 +1,4 @@
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const FeedHeader = ({ userName }) => {
@@ -18,6 +18,14 @@ const FeedHeader = ({ userName }) => {
           <span className="text-sm sm:text-base text-gray-700 truncate max-w-[100px] sm:max-w-none">
             {userName}
           </span>
+          <button
+            onClick={() => navigate('/suggestions')}
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-blue-600 hover:bg-blue-50 rounded text-sm sm:text-base"
+            title="Gợi ý kết nối"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Gợi ý</span>
+          </button>
           <button
             onClick={() => navigate('/profile')}
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-blue-600 hover:bg-blue-50 rounded text-sm sm:text-base"

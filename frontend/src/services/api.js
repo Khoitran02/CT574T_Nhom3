@@ -90,14 +90,11 @@ export const neo4jAPI = {
 // Relationships API (Neo4j Social Network)
 export const relationshipsAPI = {
   follow: (followerId, followeeId) => api.post('/relationships/follow', { followerId, followeeId }),
-  unfollow: (followerId, followeeId) => api.post('/relationships/unfollow', { followerId, followeeId }),
   getFollowers: (userId, params = {}) => api.get(`/relationships/followers/${userId}`, { params }),
   getFollowing: (userId, params = {}) => api.get(`/relationships/following/${userId}`, { params }),
   getFollowingIds: (userId) => api.get(`/relationships/following-ids/${userId}`),
-  checkFollowStatus: (followerId, followeeId) => api.get(`/relationships/check/${followerId}/${followeeId}`),
-  getMutualFriends: (userId1, userId2) => api.get(`/relationships/mutual/${userId1}/${userId2}`),
-  getMutualFollowers: (userId, params = {}) => api.get(`/relationships/mutual-followers/${userId}`, { params }),
   getStats: (userId) => api.get(`/relationships/stats/${userId}`),
+  getSuggestions: (userId, params = {}) => api.get(`/relationships/suggestions/${userId}`, { params }),
 };
 
 // Helper functions for relationships
@@ -108,26 +105,6 @@ export const followUser = async (followerId, followeeId) => {
 
 export const unfollowUser = async (followerId, followeeId) => {
   const response = await relationshipsAPI.unfollow(followerId, followeeId);
-  return response.data;
-};
-
-export const checkFollowStatus = async (followerId, followeeId) => {
-  const response = await relationshipsAPI.checkFollowStatus(followerId, followeeId);
-  return response.data;
-};
-
-export const getUserStats = async (userId) => {
-  const response = await relationshipsAPI.getStats(userId);
-  return response.data;
-};
-
-export const getFollowers = async (userId) => {
-  const response = await relationshipsAPI.getFollowers(userId);
-  return response.data;
-};
-
-export const getFollowing = async (userId) => {
-  const response = await relationshipsAPI.getFollowing(userId);
   return response.data;
 };
 
