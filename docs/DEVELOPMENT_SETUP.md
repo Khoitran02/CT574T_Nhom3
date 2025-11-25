@@ -28,6 +28,7 @@
 
 # 2. Setup sharding và seed
 cd backend
+# Quan trọng
 node scripts/setup-sharding.js
 npm run seed:admin
 
@@ -61,6 +62,7 @@ npm run install-all
 ### Bước 3: Setup Sharding và Seed
 ```powershell
 cd backend
+# Quan trọng
 node scripts/setup-sharding.js
 npm run seed:admin
 ```
