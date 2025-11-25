@@ -167,6 +167,20 @@ npm run build        # Build production
 npm run preview      # Preview production build
 ```
 
+## Tài Liệu
+
+### Hướng Dẫn Chi Tiết
+- [**Development Setup**](docs/DEVELOPMENT_SETUP.md) - Hướng dẫn setup môi trường dev
+- [**Production Setup**](docs/PRODUCTION_SETUP.md) - Triển khai trên 4 máy LAN
+- [**Seeder Guide**](docs/SEEDER_GUIDE.md) - Hướng dẫn seed data cho testing
+- [**Testing Queries**](docs/TESTING_QUERIES.md) - Queries MongoDB & Neo4j cho testing
+- [**Neo4j Setup**](docs/neo4j/Neo4j-setup.md) - Cấu hình Neo4j
+- [**Neo4j API Guide**](docs/neo4j/NEO4J_API_GUIDE.md) - API endpoints Neo4j
+
+### Testing & Development
+- [**Sample Queries**](docs/neo4j/sample-queries.cypher) - Neo4j sample queries
+- [**Testing Followers Stats**](docs/TESTING_FOLLOWERS_STATS.md) - Test social features
+
 ### Sharding Strategy (MongoDB 8.2+)
 
 **Collections Sharded:**

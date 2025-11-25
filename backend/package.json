@@ -11,6 +11,7 @@
     "seed:large": "node scripts/seed-large-dataset.js",
     "seed:clean": "node scripts/clean-database.js",
     "seed:admin": "node scripts/seed-data-admin.js",
+    "test:create-user": "node scripts/create-test-user.js",
     "test-failover": "node scripts/test-shard-failover.js",
     "test-neo4j": "node scripts/test-neo4j.js",
     "test-mongodb": "node scripts/test-mongodb.js"

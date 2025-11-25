@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Users, UserCheck, FileText } from 'lucide-react';
 import { usersAPI, relationshipsAPI, postsAPI } from '../services/api';
@@ -10,7 +10,6 @@ import FollowButton from '../components/Social/FollowButton';
 const UserProfile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {

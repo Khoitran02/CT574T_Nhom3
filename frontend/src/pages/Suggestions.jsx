@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { relationshipsAPI } from '../services/api';
@@ -7,7 +7,6 @@ import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const Suggestions = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [followedUsers, setFollowedUsers] = useState(new Set());
 
