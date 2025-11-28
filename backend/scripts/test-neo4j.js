@@ -4,7 +4,7 @@ import { connectNeo4j, getNeo4jSession, closeNeo4jConnection, testNeo4jConnectio
 
 async function testNeo4jConnection() {
   try {
-    console.log('🔄 Đang test kết nối Neo4j...\n');
+    console.log(' Đang test kết nối Neo4j...\n');
     
     // Kết nối Neo4j
     await connectNeo4j();
@@ -15,7 +15,7 @@ async function testNeo4jConnection() {
     // Test query đơn giản
     console.log('1. Test query cơ bản...');
     const result1 = await session.run('RETURN "Neo4j connection successful!" AS message, datetime() AS timestamp');
-    console.log('✅', result1.records[0].get('message'));
+    console.log('', result1.records[0].get('message'));
     console.log('   Timestamp:', result1.records[0].get('timestamp').toString());
     
     // Test tạo node
@@ -25,25 +25,25 @@ async function testNeo4jConnection() {
       SET test.lastChecked = datetime()
       RETURN test
     `);
-    console.log('✅ Test node đã được tạo/cập nhật');
+    console.log(' Test node đã được tạo/cập nhật');
     
     // Test query node
     console.log('\n3. Test query node...');
     const result2 = await session.run('MATCH (test:TestNode {id: "test-connection"}) RETURN test');
     if (result2.records.length > 0) {
-      console.log('✅ Test node tìm thấy:', result2.records[0].get('test').properties);
+      console.log(' Test node tìm thấy:', result2.records[0].get('test').properties);
     }
     
     // Xóa test node
     console.log('\n4. Dọn dẹp test node...');
     await session.run('MATCH (test:TestNode {id: "test-connection"}) DELETE test');
-    console.log('✅ Test node đã được xóa');
+    console.log(' Test node đã được xóa');
     
     await session.close();
-    console.log('\n🎉 Test kết nối Neo4j hoàn tất thành công!');
+    console.log('\n Test kết nối Neo4j hoàn tất thành công!');
     
   } catch (error) {
-    console.error('❌ Test kết nối Neo4j thất bại:');
+    console.error(' Test kết nối Neo4j thất bại:');
     console.error('Error:', error.message);
     
     if (error.code) {
@@ -51,7 +51,7 @@ async function testNeo4jConnection() {
     }
     
     // Gợi ý khắc phục
-    console.log('\n💡 Gợi ý khắc phục:');
+    console.log('\n Gợi ý khắc phục:');
     console.log('- Kiểm tra Neo4j Desktop đã khởi động chưa');
     console.log('- Kiểm tra database "socialnetwork" đã được tạo và started');
     console.log('- Kiểm tra username/password trong .env hoặc Neo4j Desktop');

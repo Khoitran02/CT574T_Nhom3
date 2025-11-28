@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
         await session.close();
         logger.info('User created in Neo4j');
       } catch (neo4jError) {
-        logger.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+        logger.warn('Neo4j user creation failed:', neo4jError.message);
       }
     }
 
@@ -161,7 +161,7 @@ router.put("/:id", async (req, res) => {
       
       await session.close();
     } catch (neo4jError) {
-      logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+      logger.warn('Neo4j user update failed:', neo4jError.message);
     }
 
     res.status(200).json({
@@ -272,7 +272,7 @@ router.patch("/:id", async (req, res) => {
         
         await session.close();
       } catch (neo4jError) {
-        logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+        logger.warn('Neo4j user update failed:', neo4jError.message);
       }
     }
 

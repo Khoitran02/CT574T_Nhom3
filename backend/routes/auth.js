@@ -68,7 +68,7 @@ router.post("/register", async (req, res) => {
 
         await session.close();
       } catch (neo4jError) {
-        logger.warn("⚠️ Neo4j user creation failed:", neo4jError.message);
+        logger.warn("Neo4j user creation failed:", neo4jError.message);
       }
     }
 

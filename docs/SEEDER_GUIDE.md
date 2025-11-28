@@ -36,7 +36,7 @@ npm run seed:demo
 # 2. Development data
 npm run seed:quick
 
-# 3. Production-scale data (grab coffee ☕)
+# 3. Production-scale data
 npm run seed:large
 
 # 4. Clean everything
@@ -316,23 +316,6 @@ RETURN u, r, u2 LIMIT 50
 NODE_OPTIONS="--max-old-space-size=4096" npm run seed:large
 ```
 
-**2. MongoDB Optimization:**
-- Sử dụng SSD storage
-- Tăng cache size trong config
-- Tắt journaling (dev only)
-- Close MongoDB Compass khi seed
-
-**3. Neo4j Optimization:**
-- Tăng heap size trong neo4j.conf
-- Tắt transaction logs (dev only)
-- Close Neo4j Browser khi seed
-
-**4. System Optimization:**
-- Close các ứng dụng khác
-- Disable antivirus scanning tạm thời
-- Sử dụng SSD thay vì HDD
-- Đảm bảo đủ RAM available
-
 ---
 
 ## Troubleshooting
@@ -364,39 +347,6 @@ npm run seed:clean
 # Sau đó chạy lại seeder
 npm run seed:demo  # hoặc seed khác
 ```
-
----
-
-## Expected Performance
-
-### Demo Seeder
-- **Time:** 1-2 seconds
-- **Memory:** <100MB
-- **CPU:** Low
-- **Disk I/O:** Minimal
-
-### Quick Seeder
-- **Time:** 15-30 seconds
-- **Memory:** ~200MB
-- **CPU:** Medium
-- **Throughput:** ~250-333 posts/sec
-- **Disk I/O:** Medium
-
-### Large Seeder
-- **Time:** 30-60 minutes
-- **Memory:** 2-3GB peak
-- **CPU:** High (multi-core utilized)
-- **Throughput:** ~3,000-4,000 posts/sec
-- **Disk I/O:** Heavy
-- **Network:** Moderate (local)
-
-**Breakdown (Large):**
-1. Users generation: ~5s
-2. Users to MongoDB: ~10s
-3. Users to Neo4j: ~15s
-4. Posts insertion: ~40m (main bottleneck)
-5. Relationships creation: ~30s
-6. Final statistics: ~5s
 
 ---
 
@@ -451,7 +401,5 @@ await createPosts();  // Chỉ tạo posts
 - Default password: `password123`
 
 ---
-
-**Happy Seeding! 🌱✨**
 
 *Cập nhật: Tháng 11/2025*

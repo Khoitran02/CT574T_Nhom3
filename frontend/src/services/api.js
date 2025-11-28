@@ -120,9 +120,4 @@ export const authAPI = {
   changePassword: (data) => api.post('/auth/change-password', data),
 };
 
-// Seed API
-export const seedAPI = {
-  createAdmin: () => api.post('/seed/admin'),
-};
-
 export default api;

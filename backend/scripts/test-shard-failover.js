@@ -26,11 +26,11 @@ async function testDataAccess(collectionName, sampleSize = 5) {
   
   const records = await collection.find({}).limit(sampleSize).toArray();
   
-  console.log(`\n📊 Test truy cập ${collectionName}:`);
+  console.log(`\n Test truy cập ${collectionName}:`);
   console.log(`   Tổng số records tìm thấy: ${records.length}`);
   
   if (records.length > 0) {
-    console.log(`   ✅ Dữ liệu vẫn truy cập được`);
+    console.log(`    Dữ liệu vẫn truy cập được`);
     // Chỉ hiển thị 2 records đầu tiên
     const displayCount = Math.min(2, records.length);
     for (let i = 0; i < displayCount; i++) {
@@ -40,7 +40,7 @@ async function testDataAccess(collectionName, sampleSize = 5) {
       console.log(`   ... và ${records.length - 2} records khác`);
     }
   } else {
-    console.log(`   ⚠️  Không tìm thấy dữ liệu`);
+    console.log(`     Không tìm thấy dữ liệu`);
   }
   
   return records.length;
@@ -51,7 +51,7 @@ async function checkShardHealth() {
   const client = connection.getClient?.() || connection.client;
   const adminDb = client.db('admin');
   
-  console.log('\n🏥 Kiểm tra sức khỏe shards:\n');
+  console.log('\n Kiểm tra sức khỏe shards:\n');
   
   try {
     const shards = await getShardStats();
@@ -69,16 +69,16 @@ async function checkShardHealth() {
         ).asPromise();
         
         await shardConn.db.admin().ping();
-        console.log(`✅ ${shard._id.padEnd(10)} - ONLINE  (${shardHost})`);
+        console.log(` ${shard._id.padEnd(10)} - ONLINE  (${shardHost})`);
         await shardConn.close();
         
       } catch (error) {
-        console.log(`❌ ${shard._id.padEnd(10)} - OFFLINE (${shardHost})`);
+        console.log(` ${shard._id.padEnd(10)} - OFFLINE (${shardHost})`);
         console.log(`   Lỗi: ${error.message}`);
       }
     }
   } catch (error) {
-    console.error('❌ Không thể kiểm tra shard health:', error.message);
+    console.error(' Không thể kiểm tra shard health:', error.message);
   }
 }
 
@@ -87,7 +87,7 @@ async function testChunkDistribution() {
   const client = connection.getClient?.() || connection.client;
   const configDb = client.db('config');
   
-  console.log('\n📦 Phân bố chunks:\n');
+  console.log('\n Phân bố chunks:\n');
   
   const collections = ['users', 'posts', 'comments'];
   const dbName = process.env.MONGO_DATABASE || 'socialnetwork';
@@ -130,9 +130,9 @@ async function runFailoverTest() {
   console.log('╚════════════════════════════════════════════╝\n');
   
   try {
-    console.log('🔌 Kết nối MongoDB...');
+    console.log(' Kết nối MongoDB...');
     await connectMongoDB();
-    console.log('✅ Đã kết nối\n');
+    console.log(' Đã kết nối\n');
     
     // 1. Kiểm tra sức khỏe shards
     await checkShardHealth();
@@ -148,12 +148,12 @@ async function runFailoverTest() {
     
     // 4. Kết quả
     console.log('\n═══════════════════════════════════════════');
-    console.log('\n📋 Tổng kết:');
-    console.log(`   Users accessible: ${usersCount > 0 ? '✅' : '❌'}`);
-    console.log(`   Posts accessible: ${postsCount > 0 ? '✅' : '❌'}`);
-    console.log(`   Comments accessible: ${commentsCount > 0 ? '✅' : '❌'}`);
+    console.log('\n Tổng kết:');
+    console.log(`   Users accessible: ${usersCount > 0 ? '' : 'x'}`);
+    console.log(`   Posts accessible: ${postsCount > 0 ? '' : 'x'}`);
+    console.log(`   Comments accessible: ${commentsCount > 0 ? '' : 'x'}`);
     
-    console.log('\n💡 Hướng dẫn test failover:');
+    console.log('\n Hướng dẫn test failover:');
     console.log('   Test 1 - Tắt Máy 1 (Node1 của tất cả shards):');
     console.log('      .\\script\\stop-machine.ps1 1');
     console.log('      → Mỗi shard còn 2/3 nodes hoạt động');
@@ -176,7 +176,7 @@ async function runFailoverTest() {
     console.log('      .\\script\\start-machine.ps1 2\n');
     
   } catch (error) {
-    console.error('\n❌ Lỗi:', error.message);
+    console.error('\n Lỗi:', error.message);
     console.error(error.stack);
   } finally {
     await closeMongoConnection();

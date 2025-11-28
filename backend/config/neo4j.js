@@ -17,9 +17,9 @@ export const connectNeo4j = async () => {
       uri,
       neo4j.auth.basic(username, password),
       {
-        maxConnectionLifetime: 3 * 60 * 60 * 1000,
+        maxConnectionLifetime: 3 * 60 * 60 * 1000, // 3 hours
         maxConnectionPoolSize: 50,
-        connectionAcquisitionTimeout: 2 * 60 * 1000,
+        connectionAcquisitionTimeout: 2 * 60 * 1000, // 2 minutes
       }
     );
 

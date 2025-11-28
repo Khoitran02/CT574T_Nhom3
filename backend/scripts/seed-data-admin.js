@@ -11,9 +11,9 @@ async function seedAdminUser() {
     const existingAdmin = await User.findOne({ role: 'admin' });
 
     if (existingAdmin) {
-      console.log('✅ Admin user đã tồn tại');
-      console.log(`   Username: ${existingAdmin.username}`);
-      console.log(`   Email: ${existingAdmin.email}`);
+      console.log(' Admin user đã tồn tại');
+      console.log(` Username: ${existingAdmin.username}`);
+      console.log(` Email: ${existingAdmin.email}`);
       return;
     }
 
@@ -31,12 +31,12 @@ async function seedAdminUser() {
 
     await adminUser.save();
 
-    console.log('✅ Đã tạo admin user');
-    console.log('   Username: admin');
-    console.log('   Password: admin123');
-    console.log('   Email: admin@socialnetwork.com');
+    console.log(' Đã tạo admin user');
+    console.log(' Username: admin');
+    console.log(' Password: admin123');
+    console.log(' Email: admin@socialnetwork.com');
   } catch (error) {
-    console.error('❌ Lỗi khi tạo admin:', error.message);
+    console.error(' Lỗi khi tạo admin:', error.message);
     throw error;
   }
 }
@@ -44,13 +44,13 @@ async function seedAdminUser() {
 async function main() {
   try {
     await connectMongoDB();
-    console.log('\n🌱 Seeding database...\n');
+    console.log('\n Seeding database...\n');
     
     await seedAdminUser();
     
-    console.log('\n✅ Seed hoàn tất!\n');
+    console.log('\n Seed hoàn tất!\n');
   } catch (error) {
-    console.error('❌ Seed thất bại:', error.message);
+    console.error(' Seed thất bại:', error.message);
     process.exit(1);
   } finally {
     await closeMongoConnection();
