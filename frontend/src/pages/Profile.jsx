@@ -1,24 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { User, Users, UserCheck, Lock, Edit, FileText } from 'lucide-react';
+import { User, Users, UserCheck, Lock, Edit, FileText, Camera } from 'lucide-react';
 import { usersAPI, relationshipsAPI, authAPI, postsAPI } from '../services/api';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Modal from '../components/UI/Modal';
 import PostCard from '../components/Feed/PostCard';
+import CreatePostButton from '../components/Feed/CreatePostButton';
 
 const Profile = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: '', email: '', bio: '' });
   const [passwordFormData, setPasswordFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [unfollowedUsers, setUnfollowedUsers] = useState(new Set());
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -40,13 +44,19 @@ const Profile = () => {
 
   const { data: followersData } = useQuery({
     queryKey: ['followers', currentUser?._id],
-    queryFn: () => relationshipsAPI.getFollowers(currentUser._id),
+    queryFn: async () => {
+      const response = await relationshipsAPI.getFollowers(currentUser._id);
+      return response.data;
+    },
     enabled: showFollowersModal && !!currentUser,
   });
 
   const { data: followingData } = useQuery({
     queryKey: ['following', currentUser?._id],
-    queryFn: () => relationshipsAPI.getFollowing(currentUser._id),
+    queryFn: async () => {
+      const response = await relationshipsAPI.getFollowing(currentUser._id);
+      return response.data;
+    },
     enabled: showFollowingModal && !!currentUser,
   });
 
@@ -86,9 +96,62 @@ const Profile = () => {
     },
   });
 
+  const updateAvatarMutation = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await usersAPI.updateAvatar(currentUser._id, formData);
+      return response.data;
+    },
+    onSuccess: (response) => {
+      const updatedUser = { ...currentUser, avatar: response.data.user.avatar };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      setSuccess('Cập nhật ảnh đại diện thành công!');
+      setError('');
+      setTimeout(() => setSuccess(''), 3000);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (err) => {
+      setError(err.response?.data?.message || 'Lỗi khi cập nhật ảnh đại diện');
+      setSuccess('');
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: ({ followerId, followeeId }) => relationshipsAPI.unfollow(followerId, followeeId),
+    onSuccess: (_, variables) => {
+      setUnfollowedUsers(prev => new Set(prev).add(variables.followeeId));
+      queryClient.invalidateQueries({ queryKey: ['stats', currentUser._id] });
+      queryClient.invalidateQueries({ queryKey: ['followingIds', currentUser._id] });
+    },
+  });
+
+  const followMutation = useMutation({
+    mutationFn: ({ followerId, followeeId }) => relationshipsAPI.follow(followerId, followeeId),
+    onSuccess: (_, variables) => {
+      setUnfollowedUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(variables.followeeId);
+        return newSet;
+      });
+      queryClient.invalidateQueries({ queryKey: ['stats', currentUser._id] });
+      queryClient.invalidateQueries({ queryKey: ['followingIds', currentUser._id] });
+    },
+  });
+
+  const removeFollowerMutation = useMutation({
+    mutationFn: ({ userId, followerId }) => relationshipsAPI.removeFollower(userId, followerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followers', currentUser._id] });
+      queryClient.invalidateQueries({ queryKey: ['stats', currentUser._id] });
+    },
+  });
+
   const stats = statsData?.data?.data || { followersCount: 0, followingCount: 0 };
-  const followers = followersData?.data?.data || [];
-  const following = followingData?.data?.data || [];
+  const followers = followersData?.data || [];
+  const following = followingData?.data || [];
   const allPosts = postsResponse?.data?.data || [];
   const myPosts = allPosts.filter((post) => post.userId === currentUser?._id);
 
@@ -118,6 +181,25 @@ const Profile = () => {
       currentPassword: passwordFormData.currentPassword,
       newPassword: passwordFormData.newPassword,
     });
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Vui lòng chọn file ảnh');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        setError('Ảnh không được vượt quá 5MB');
+        return;
+      }
+      updateAvatarMutation.mutate(file);
+    }
   };
 
   if (!currentUser) return <LoadingSpinner />;
@@ -151,8 +233,38 @@ const Profile = () => {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {currentUser.name[0].toUpperCase()}
+              <div className="relative group">
+                {currentUser.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-20 h-20 rounded-full object-cover cursor-pointer"
+                    onClick={() => setShowAvatarModal(true)}
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                    {currentUser.name[0].toUpperCase()}
+                  </div>
+                )}
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={updateAvatarMutation.isPending}
+                  className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors shadow-lg"
+                  title="Cập nhật ảnh đại diện"
+                >
+                  {updateAvatarMutation.isPending ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{currentUser.name}</h2>
@@ -211,10 +323,13 @@ const Profile = () => {
 
         {/* My Posts Section */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Bài viết của tôi ({myPosts.length})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Bài viết của tôi ({myPosts.length})
+            </h3>
+            <CreatePostButton />
+          </div>
           {myPosts.length === 0 ? (
             <p className="text-center text-gray-500 py-8">Bạn chưa đăng bài viết nào.</p>
           ) : (
@@ -226,6 +341,28 @@ const Profile = () => {
           )}
         </div>
       </div>
+
+      {/* Avatar Modal */}
+      <Modal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        title="Ảnh đại diện"
+        size="lg"
+      >
+        {currentUser.avatar && (
+          <div className="space-y-4">
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-full max-h-96 object-contain rounded-lg"
+            />
+            <div className="text-center text-gray-600">
+              <p className="font-semibold">{currentUser.name}</p>
+              <p className="text-sm">Ảnh đại diện</p>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Followers Modal */}
       <Modal
@@ -239,9 +376,24 @@ const Profile = () => {
             <p className="text-center text-gray-500 py-4">Chưa có người theo dõi</p>
           ) : (
             followers.map((item) => (
-              <div key={item.user.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                <h4 className="font-semibold text-gray-900">{item.user.username}</h4>
-                <p className="text-sm text-gray-600">{item.user.name}</p>
+              <div key={item.user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div 
+                  className="cursor-pointer flex-1"
+                  onClick={() => {
+                    setShowFollowersModal(false);
+                    navigate(`/profile/${item.user.id}`);
+                  }}
+                >
+                  <h4 className="font-semibold text-gray-900 hover:text-blue-600">{item.user.name}</h4>
+                  <p className="text-sm text-gray-600">@{item.user.email}</p>
+                </div>
+                <button
+                  onClick={() => removeFollowerMutation.mutate({ userId: currentUser._id, followerId: item.user.id })}
+                  disabled={removeFollowerMutation.isPending}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                >
+                  Xóa
+                </button>
               </div>
             ))
           )}
@@ -259,12 +411,40 @@ const Profile = () => {
           {following.length === 0 ? (
             <p className="text-center text-gray-500 py-4">Chưa theo dõi ai</p>
           ) : (
-            following.map((item) => (
-              <div key={item.user.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                <h4 className="font-semibold text-gray-900">{item.user.username}</h4>
-                <p className="text-sm text-gray-600">{item.user.name}</p>
-              </div>
-            ))
+            following.map((item) => {
+              const isUnfollowed = unfollowedUsers.has(item.user.id);
+              return (
+                <div key={item.user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div 
+                    className="cursor-pointer flex-1"
+                    onClick={() => {
+                      setShowFollowingModal(false);
+                      navigate(`/profile/${item.user.id}`);
+                    }}
+                  >
+                    <h4 className="font-semibold text-gray-900 hover:text-blue-600">{item.user.name}</h4>
+                    <p className="text-sm text-gray-600">@{item.user.email}</p>
+                  </div>
+                  {isUnfollowed ? (
+                    <button
+                      onClick={() => followMutation.mutate({ followerId: currentUser._id, followeeId: item.user.id })}
+                      disabled={followMutation.isPending}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      Follow
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => unfollowMutation.mutate({ followerId: currentUser._id, followeeId: item.user.id })}
+                      disabled={unfollowMutation.isPending}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      Unfollow
+                    </button>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </Modal>

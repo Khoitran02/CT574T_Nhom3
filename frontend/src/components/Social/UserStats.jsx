@@ -1,12 +1,15 @@
 // components/Social/UserStats.jsx
 import { useQuery } from '@tanstack/react-query';
 import { Users, UserCheck } from 'lucide-react';
-import { getUserStats } from '../../services/api';
+import { relationshipsAPI } from '../../services/api';
 
 const UserStats = ({ userId }) => {
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['userStats', userId],
-    queryFn: () => getUserStats(userId),
+    queryFn: async () => {
+      const response = await relationshipsAPI.getStats(userId);
+      return response.data;
+    },
     enabled: !!userId
   });
 

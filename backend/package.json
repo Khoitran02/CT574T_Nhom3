@@ -5,15 +5,16 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test-neo4j": "node test-neo4j.js",
-    "test-mongodb": "node test-mongodb.js",
     "generate:images": "node scripts/generate-sample-images.js",
     "seed:demo": "node scripts/seed-demo.js",
     "seed:quick": "node scripts/seed-quick.js",
     "seed:large": "node scripts/seed-large-dataset.js",
     "seed:clean": "node scripts/clean-database.js",
-    "seed": "node script/seed-data.js",
-    "test-failover": "node script/test-shard-failover.js"
+    "seed:admin": "node scripts/seed-data-admin.js",
+    "test:create-user": "node scripts/create-test-user.js",
+    "test-failover": "node scripts/test-shard-failover.js",
+    "test-neo4j": "node scripts/test-neo4j.js",
+    "test-mongodb": "node scripts/test-mongodb.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

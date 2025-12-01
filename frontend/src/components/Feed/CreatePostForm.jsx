@@ -25,15 +25,18 @@ const CreatePostForm = ({ onSubmit, onCancel, currentUser }) => {
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Lấy danh sách người follow chéo
+  // Lấy danh sách người đang follow
   useEffect(() => {
     if (currentUser?._id) {
-      relationshipsAPI.getMutualFollowers(currentUser._id, { limit: 100 })
+      relationshipsAPI.getFollowing(currentUser._id, { limit: 100 })
         .then(response => {
-          setMutualFollowers(response.data.data || []);
+          // response.data = { message, data: [...], pagination }
+          const followingList = response.data?.data || [];
+          const users = followingList.map(item => item.user);
+          setMutualFollowers(users);
         })
         .catch(error => {
-          console.error('Error fetching mutual followers:', error);
+          console.error('Error fetching following:', error);
         });
     }
   }, [currentUser]);

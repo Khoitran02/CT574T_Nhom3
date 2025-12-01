@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { postsAPI, usersAPI, relationshipsAPI } from '../services/api';
+import { postsAPI, relationshipsAPI } from '../services/api';
 import { Filter, X } from 'lucide-react';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Modal from '../components/UI/Modal';
@@ -62,11 +62,6 @@ const Feed = () => {
     enabled: !!currentUser,
   });
 
-  const { data: usersResponse } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.getAll({ limit: 100 }),
-  });
-
   const { data: statsData } = useQuery({
     queryKey: ['stats', currentUser?._id],
     queryFn: () => relationshipsAPI.getStats(currentUser._id),
@@ -101,7 +96,6 @@ const Feed = () => {
 
   // Flatten posts from all pages
   const allPosts = postsData?.pages?.flatMap(page => page.data.data) || [];
-  const users = usersResponse?.data?.data || [];
   const stats = statsData?.data?.data || { followersCount: 0, followingCount: 0 };
   const followingIds = followingIdsData?.data?.data || [];
 
@@ -128,11 +122,6 @@ const Feed = () => {
       }
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // Lọc admin và chính mình khỏi danh sách gợi ý
-  const suggestedUsers = users
-    .filter((u) => u._id !== currentUser?._id && u.role !== 'admin')
-    .slice(0, 5);
 
   const handleFollow = (userId) => {
     if (currentUser) {
@@ -273,7 +262,7 @@ const Feed = () => {
           <div className="hidden lg:block space-y-4">
             <UserStats stats={stats} />
             <UserSuggestions 
-              users={suggestedUsers} 
+              currentUserId={currentUser._id}
               onFollow={handleFollow}
               followingIds={followingIds}
             />

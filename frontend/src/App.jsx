@@ -11,6 +11,8 @@ import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import Feed from './pages/Feed';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
+import Suggestions from './pages/Suggestions';
 import './App.css';
 
 // Create a client
@@ -36,6 +38,8 @@ function App() {
           {/* User routes */}
           <Route path="/" element={<Feed />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
+          <Route path="/suggestions" element={<Suggestions />} />
           
           {/* Admin routes */}
           <Route path="/admin" element={<Layout />}>

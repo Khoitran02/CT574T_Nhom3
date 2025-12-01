@@ -21,7 +21,7 @@ async function findRecordOnShards(collectionName, recordId) {
     
     const shardStatus = await adminDb.command({ listShards: 1 });
     
-    console.log(`\n🔎 Tìm kiếm record trên ${shardStatus.shards.length} shards`);
+    console.log(`\nTìm kiếm record trên ${shardStatus.shards.length} shards`);
     console.log(`Collection: ${collectionName}, ID: ${recordId}\n`);
     
     for (const shard of shardStatus.shards) {
@@ -36,7 +36,7 @@ async function findRecordOnShards(collectionName, recordId) {
         const record = await collection.findOne({ _id: queryId });
         
         if (record) {
-          console.log(`✅ TÌM THẤY trên ${shard._id}`);
+          console.log(`TÌM THẤY trên ${shard._id}`);
           console.log(`   Host: ${shard.host}`);
           console.log(`   Data: ${JSON.stringify(record, null, 2)}`);
         } else {
@@ -45,11 +45,11 @@ async function findRecordOnShards(collectionName, recordId) {
         
         await shardConn.close();
       } catch (error) {
-        console.log(`❌ Lỗi khi truy vấn ${shard._id}: ${error.message}`);
+        console.log(`Lỗi khi truy vấn ${shard._id}: ${error.message}`);
       }
     }
   } catch (error) {
-    console.error('❌ Lỗi:', error.message);
+    console.error('Lỗi:', error.message);
   }
 }
 
@@ -74,21 +74,21 @@ async function checkShardLocation(collectionName, recordId) {
       _id: `${dbName}.${collectionName}`
     });
     
-    console.log(`\n📊 Collection: ${collectionName}`);
+    console.log(`\nCollection: ${collectionName}`);
     
     if (shardInfo) {
-      console.log(`✅ Đã enable sharding`);
-      console.log(`🔑 Shard key: ${JSON.stringify(shardInfo.key)}`);
+      console.log(`Đã enable sharding`);
+      console.log(`Shard key: ${JSON.stringify(shardInfo.key)}`);
       
       const collection = db.collection(collectionName);
       const record = await collection.findOne({ _id: queryId });
       
       if (!record) {
-        console.log(`❌ Không tìm thấy record với ID: ${recordId}`);
+        console.log(`Không tìm thấy record với ID: ${recordId}`);
         return;
       }
       
-      console.log(`\n📄 Record tìm thấy:`);
+      console.log(`\nRecord tìm thấy:`);
       console.log(JSON.stringify(record, null, 2));
       
       // MongoDB 8.2+ sử dụng chunk metadata khác
@@ -96,7 +96,7 @@ async function checkShardLocation(collectionName, recordId) {
         .find({ uuid: shardInfo.uuid })
         .toArray();
       
-      console.log(`\n🔍 Chunk info:`);
+      console.log(`\nChunk info:`);
       console.log(`  Total chunks: ${chunks.length}`);
       
       if (chunks.length > 0) {
@@ -115,7 +115,7 @@ async function checkShardLocation(collectionName, recordId) {
           ? new mongoose.Types.ObjectId(recordId) 
           : recordId;
         
-        console.log(`\n📍 Record location:`);
+        console.log(`\nRecord location:`);
         // Với hashed shard key, cần query thực tế để biết shard
         const explain = await collection.find({ _id: queryId }).explain('executionStats');
         
@@ -123,26 +123,26 @@ async function checkShardLocation(collectionName, recordId) {
           let found = false;
           for (const [shardName, shardStats] of Object.entries(explain.shards)) {
             if (shardStats.executionStats && shardStats.executionStats.nReturned > 0) {
-              console.log(`  ✅ Shard: ${shardName}`);
+              console.log(`Shard: ${shardName}`);
               console.log(`     Documents returned: ${shardStats.executionStats.nReturned}`);
               found = true;
             }
           }
           if (!found) {
-            console.log(`  ⚠️  Không xác định được shard (có thể do broadcast query)`);
+            console.log(`Không xác định được shard (có thể do broadcast query)`);
           }
         } else {
-          console.log(`  ℹ️  Sử dụng --direct để query trực tiếp từng shard`);
+          console.log(`Sử dụng --direct để query trực tiếp từng shard`);
         }
       } else {
-        console.log(`  ⚠️  Không có chunks - data chưa được phân tán!`);
-        console.log(`  💡 Sử dụng --direct để xem record nằm ở shard nào`);
+        console.log(`Không có chunks - data chưa được phân tán!`);
+        console.log(`Sử dụng --direct để xem record nằm ở shard nào`);
       }
     } else {
-      console.log(`⚠️  Collection chưa được shard`);
+      console.log(`Collection chưa được shard`);
     }
   } catch (error) {
-    console.error('❌ Lỗi:', error.message);
+    console.error('Lỗi:', error.message);
   }
 }
 
@@ -164,7 +164,7 @@ async function listShards() {
       console.log(`     State: ${shard.state}`);
     });
   } catch (error) {
-    console.warn('⚠️  Không thể lấy danh sách shards:', error.message);
+    console.warn('Không thể lấy danh sách shards:', error.message);
   }
 }
 
@@ -173,7 +173,7 @@ async function main() {
   const args = process.argv.slice(2);
   
   if (args.length === 0) {
-    console.log('\n📖 Cách sử dụng:');
+    console.log('\nCách sử dụng:');
     console.log('  node check-shard-location.js <collection> <recordId>');
     console.log('  node check-shard-location.js --direct <collection> <recordId>');
     console.log('  node check-shard-location.js --list-shards\n');
@@ -194,10 +194,10 @@ async function main() {
     } else if (args.length >= 2) {
       await checkShardLocation(args[0], args[1]);
     } else {
-      console.error('❌ Tham số không hợp lệ.');
+      console.error('Tham số không hợp lệ.');
     }
   } catch (error) {
-    console.error('❌ Lỗi:', error.message);
+    console.error('Lỗi:', error.message);
   } finally {
     await closeMongoConnection();
   }

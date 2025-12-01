@@ -4,6 +4,7 @@ import { connectMongoDB, getMongoConnection, closeMongoConnection } from '../con
 dotenv.config();
 
 /**
+ * QUAN TRỌNG
  * Script này PHẢI chạy TRƯỚC KHI seed data
  * Mục đích: Setup sharding để MongoDB tạo chunks khi insert data đầu tiên
  */
@@ -16,18 +17,18 @@ async function setupSharding() {
     const adminDb = client.db('admin');
     const dbName = process.env.MONGO_DATABASE || 'socialnetwork';
     
-    console.log('\n⚙️  SETUP SHARDING\n');
+    console.log('\n  SETUP SHARDING\n');
     console.log('='.repeat(60));
     
     // Shard collections với hashed key để phân bố đều
-    console.log('\n📊 Sharding collections...\n');
+    console.log('\n Sharding collections...\n');
     
     try {
       await adminDb.command({
         shardCollection: `${dbName}.users`,
         key: { _id: 'hashed' }
       });
-      console.log('   ✅ users: Sharded với _id (hashed)');
+      console.log('    users: Sharded với _id (hashed)');
     } catch (error) {
       if (error.message.includes('already')) {
         console.log('   ○ users: Đã được shard');
@@ -41,7 +42,7 @@ async function setupSharding() {
         shardCollection: `${dbName}.posts`,
         key: { authorId: 'hashed' }
       });
-      console.log('   ✅ posts: Sharded với authorId (hashed)');
+      console.log('    posts: Sharded với authorId (hashed)');
     } catch (error) {
       if (error.message.includes('already')) {
         console.log('   ○ posts: Đã được shard');
@@ -55,7 +56,7 @@ async function setupSharding() {
         shardCollection: `${dbName}.comments`,
         key: { postId: 'hashed' }
       });
-      console.log('   ✅ comments: Sharded với postId (hashed)');
+      console.log('    comments: Sharded với postId (hashed)');
     } catch (error) {
       if (error.message.includes('already')) {
         console.log('   ○ comments: Đã được shard');
@@ -65,13 +66,13 @@ async function setupSharding() {
     }
     
     console.log('\n' + '='.repeat(60));
-    console.log('\n✅ HOÀN TẤT!\n');
-    console.log('📝 Bước tiếp theo: Chạy seed data');
+    console.log('\n HOÀN TẤT!\n');
+    console.log(' Bước tiếp theo: Chạy seed data');
     console.log('   npm run seed\n');
-    console.log('💡 Chunks sẽ tự động được tạo khi insert data đầu tiên\n');
+    console.log(' Chunks sẽ tự động được tạo khi insert data đầu tiên\n');
     
   } catch (error) {
-    console.error('\n❌ Lỗi:', error.message);
+    console.error('\n Lỗi:', error.message);
     process.exit(1);
   } finally {
     await closeMongoConnection();

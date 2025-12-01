@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { commentsAPI, postsAPI } from '../../services/api';
 import CommentList from './CommentList';
@@ -32,8 +33,9 @@ const renderContentWithMentions = (content, mentions = []) => {
           className="text-blue-600 font-medium hover:underline cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
-            // TODO: Navigate to user profile
-            console.log('Navigate to user:', mention.userId);
+            if (mention.userId) {
+              window.location.href = `/profile/${mention.userId}`;
+            }
           }}
         >
           {mentionText}
@@ -54,6 +56,7 @@ const renderContentWithMentions = (content, mentions = []) => {
 
 const PostCard = ({ post, currentUser }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showComments, setShowComments] = useState(false);
 
   // Fetch comments count ngay từ đầu
@@ -136,7 +139,17 @@ const PostCard = ({ post, currentUser }) => {
           {post.author?.[0]?.toUpperCase() || 'U'}
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{post.author}</h3>
+          <h3 
+            className="font-semibold text-gray-900 text-sm sm:text-base hover:text-blue-600 cursor-pointer"
+            onClick={() => {
+              const userId = post.authorId || post.userId;
+              if (userId && userId !== currentUser?._id) {
+                navigate(`/profile/${userId}`);
+              }
+            }}
+          >
+            {post.author}
+          </h3>
           <p className="text-xs sm:text-sm text-gray-500">
             {new Date(post.createdAt).toLocaleDateString('vi-VN')}
           </p>

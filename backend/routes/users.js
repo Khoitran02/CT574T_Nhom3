@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/database.js";
+import { upload } from "../config/upload.js";
 import logger from "../config/logger.js";
 
 const router = express.Router();
@@ -87,7 +88,7 @@ router.post("/", async (req, res) => {
         await session.close();
         logger.info('User created in Neo4j');
       } catch (neo4jError) {
-        logger.warn('⚠️ Neo4j user creation failed:', neo4jError.message);
+        logger.warn('Neo4j user creation failed:', neo4jError.message);
       }
     }
 
@@ -160,7 +161,7 @@ router.put("/:id", async (req, res) => {
       
       await session.close();
     } catch (neo4jError) {
-      logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+      logger.warn('Neo4j user update failed:', neo4jError.message);
     }
 
     res.status(200).json({
@@ -171,6 +172,60 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ 
       message: "Lỗi khi cập nhật user", 
       error: error.message 
+    });
+  }
+});
+
+// Cập nhật avatar và tạo post - PATCH /users/:id/avatar
+router.patch("/:id/avatar", upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Không có file được upload",
+      });
+    }
+
+    const avatarUrl = `/uploads/user-images/${req.file.filename}`;
+    
+    // Cập nhật avatar trong MongoDB
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { avatar: avatarUrl },
+      { new: true, runValidators: true }
+    ).select('-password -__v');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "User không tồn tại",
+      });
+    }
+
+    // Tạo post về việc cập nhật avatar
+    const Post = (await import('../models/posts.model.js')).default;
+    const newPost = await Post.create({
+      title: "Đã cập nhật ảnh đại diện",
+      content: `${updatedUser.name} đã cập nhật ảnh đại diện mới`,
+      author: updatedUser.name,
+      authorId: updatedUser._id,
+      images: [avatarUrl],
+      tags: ['avatar_update'],
+      isPublished: true,
+    });
+
+    logger.info(`✅ User avatar updated and post created: ${updatedUser._id}`);
+
+    res.status(200).json({
+      message: "Cập nhật avatar thành công",
+      data: {
+        user: updatedUser,
+        post: newPost,
+      },
+    });
+  } catch (error) {
+    logger.error("❌ Update avatar error:", error);
+    res.status(500).json({
+      message: "Lỗi khi cập nhật avatar",
+      error: error.message,
     });
   }
 });
@@ -217,7 +272,7 @@ router.patch("/:id", async (req, res) => {
         
         await session.close();
       } catch (neo4jError) {
-        logger.warn('⚠️ Neo4j user update failed:', neo4jError.message);
+        logger.warn('Neo4j user update failed:', neo4jError.message);
       }
     }
 

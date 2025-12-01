@@ -1,5 +1,7 @@
 // app.js
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import {
   connectAllDatabases,
@@ -12,11 +14,16 @@ import logger from "./config/logger.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(express.static("public"));
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Kết nối databases
 const initializeDatabases = async () => {

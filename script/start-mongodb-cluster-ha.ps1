@@ -275,10 +275,6 @@ try {
     Write-Host "     3. npm run seed" -ForegroundColor White
     Write-Host "     4. npm run test-failover`n" -ForegroundColor White
     
-    Write-Host "  Test Failover:" -ForegroundColor Cyan
-    Write-Host "     .\script\stop-shard-node.ps1 -ShardNumber 1 -NodeNumber 1" -ForegroundColor White
-    Write-Host "     Data van accessible qua 2 nodes con lai!`n" -ForegroundColor White
-    
 } catch {
     Write-Host "`n[ERROR] $($_.Exception.Message)" -ForegroundColor Red
     Write-Host $_.ScriptStackTrace -ForegroundColor Gray

@@ -28,8 +28,9 @@
 
 # 2. Setup sharding và seed
 cd backend
-node script/setup-sharding.js
-npm run seed
+# Quan trọng
+node scripts/setup-sharding.js
+npm run seed:admin
 
 # 3. Start backend
 npm run dev 
@@ -61,8 +62,9 @@ npm run install-all
 ### Bước 3: Setup Sharding và Seed
 ```powershell
 cd backend
-node script/setup-sharding.js
-npm run seed
+# Quan trọng
+node scripts/setup-sharding.js
+npm run seed:admin
 ```
 
 ### Bước 4: Setup Neo4j
