@@ -131,12 +131,12 @@ async function cleanDatabase() {
     console.log('\n🗑️  Deleting from Neo4j...');
     const session2 = getNeo4jSession();
     
-    // Delete relationships in batches
+    // Delete ALL relationships in batches (not just FOLLOWS)
     let totalDeletedRels = 0;
     let batchDeletedRels = 0;
     do {
       const delRels = await session2.run(`
-        MATCH ()-[r:FOLLOWS]->()
+        MATCH ()-[r]->()
         WITH r LIMIT 10000
         DELETE r
         RETURN count(r) as deleted
@@ -149,12 +149,12 @@ async function cleanDatabase() {
     } while (batchDeletedRels > 0);
     console.log(`\n   ✅ Deleted ${totalDeletedRels.toLocaleString()} relationships`);
     
-    // Delete nodes in batches
+    // Delete ALL nodes in batches (User, Post, etc.)
     let totalDeletedNodes = 0;
     let batchDeletedNodes = 0;
     do {
       const delNodes = await session2.run(`
-        MATCH (n:User)
+        MATCH (n)
         WITH n LIMIT 10000
         DELETE n
         RETURN count(n) as deleted
