@@ -42,19 +42,23 @@ router.get("/post/:postId", async (req, res) => {
   try {
     const { postId } = req.params;
     
-    // Lấy tất cả comments và replies
+    // Lấy tất cả comments và replies với thông tin author
     const allComments = await Comment.find({ 
       postId, 
       isVisible: true 
-    }).sort({ createdAt: 1 });
+    })
+    .populate('authorId', 'avatar name username')
+    .sort({ createdAt: 1 });
 
     // Tổ chức thành cấu trúc tree
     const commentMap = {};
     const rootComments = [];
 
     allComments.forEach(comment => {
+      const commentObj = comment.toObject();
       commentMap[comment._id] = {
-        ...comment.toObject(),
+        ...commentObj,
+        authorAvatar: comment.authorId?.avatar || '',
         replies: []
       };
     });
@@ -120,6 +124,61 @@ router.post("/", upload.array('images', 3), async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Lỗi khi tạo comment",
+      error: error.message,
+    });
+  }
+});
+
+// Cập nhật comment - PUT /api/comments/:id
+router.put("/:id", upload.array('images', 3), async (req, res) => {
+  try {
+    const { content, mentions, emojis } = req.body;
+
+    if (!content) {
+      return res.status(400).json({
+        message: "content là bắt buộc",
+      });
+    }
+
+    const updateData = {
+      content,
+      isEdited: true,
+      editedAt: new Date(),
+    };
+
+    // Parse mentions và emojis từ JSON string nếu có
+    if (mentions) {
+      updateData.mentions = JSON.parse(mentions);
+    }
+    if (emojis) {
+      updateData.emojis = JSON.parse(emojis);
+    }
+
+    // Xử lý uploaded images nếu có
+    if (req.files && req.files.length > 0) {
+      const imagePaths = req.files.map(file => `/uploads/user-images/${file.filename}`);
+      updateData.images = imagePaths;
+    }
+
+    const updatedComment = await Comment.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedComment) {
+      return res.status(404).json({
+        message: "Comment không tồn tại",
+      });
+    }
+
+    res.status(200).json({
+      message: "Cập nhật comment thành công",
+      data: updatedComment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi cập nhật comment",
       error: error.message,
     });
   }

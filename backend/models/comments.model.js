@@ -57,6 +57,14 @@ const commentSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

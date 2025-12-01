@@ -13,16 +13,22 @@ const Posts = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const queryClient = useQueryClient();
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
   const { data: postsResponse, isLoading, error } = useQuery({
     queryKey: ['posts', page, limit],
-    queryFn: () => postsAPI.getAll({ page, limit }),
+    queryFn: () => postsAPI.getAll({ 
+      page, 
+      limit,
+      userId: currentUser?._id // Admin xem tất cả, nhưng vẫn tuân thủ visibility
+    }),
   });
 
   const deletePostMutation = useMutation({
     mutationFn: postsAPI.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
     },
   });
 

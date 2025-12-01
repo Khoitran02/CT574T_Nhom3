@@ -27,6 +27,13 @@ const Feed = () => {
     fromDate: '',
     toDate: '',
   });
+  
+  // Temporary filter states (chưa apply)
+  const [tempFilters, setTempFilters] = useState({
+    author: '',
+    fromDate: '',
+    toDate: '',
+  });
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -47,10 +54,11 @@ const Feed = () => {
     isFetchingNextPage,
     isLoading: postsLoading,
   } = useInfiniteQuery({
-    queryKey: ['feed-posts', filters],
+    queryKey: ['feed-posts', filters, currentUser?._id],
     queryFn: ({ pageParam = 1 }) => postsAPI.getAll({ 
       page: pageParam, 
       limit: 20,
+      userId: currentUser?._id, // Truyền userId để backend filter theo visibility
       author: filters.author,
       fromDate: filters.fromDate,
       toDate: filters.toDate,
@@ -133,15 +141,22 @@ const Feed = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setTempFilters(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const handleApplyFilters = () => {
+    setFilters(tempFilters);
+    setShowFilters(false);
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const emptyFilters = {
       author: '',
       fromDate: '',
       toDate: '',
-    });
+    };
+    setFilters(emptyFilters);
+    setTempFilters(emptyFilters);
   };
 
   const hasActiveFilters = filters.author || filters.fromDate || filters.toDate;
@@ -152,7 +167,7 @@ const Feed = () => {
     <div className="min-h-screen bg-gray-50">
       <FeedHeader userName={currentUser.name} />
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
@@ -189,42 +204,110 @@ const Feed = () => {
 
             {/* Filter Panel */}
             {showFilters && (
-              <div className="bg-white rounded-lg shadow p-4 space-y-4">
-                <h3 className="font-semibold text-gray-900">Bộ lọc bài viết</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tên người đăng
-                    </label>
-                    <input
-                      type="text"
-                      value={filters.author}
-                      onChange={(e) => handleFilterChange('author', e.target.value)}
-                      placeholder="Nhập tên..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Filter className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Lọc bài viết</h3>
+                      <p className="text-xs text-gray-500">Tìm kiếm bài viết theo tiêu chí</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Từ ngày
-                    </label>
-                    <input
-                      type="date"
-                      value={filters.fromDate}
-                      onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+                
+                {/* Body */}
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* Author Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Người đăng
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          value={tempFilters.author}
+                          onChange={(e) => handleFilterChange('author', e.target.value)}
+                          placeholder="Tìm theo tên người đăng..."
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Date Range Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Khoảng thời gian
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <input
+                            type="date"
+                            value={tempFilters.fromDate}
+                            onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+                            className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          />
+                          <span className="absolute -bottom-5 left-0 text-xs text-gray-500">Từ ngày</span>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <input
+                            type="date"
+                            value={tempFilters.toDate}
+                            onChange={(e) => handleFilterChange('toDate', e.target.value)}
+                            className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          />
+                          <span className="absolute -bottom-5 left-0 text-xs text-gray-500">Đến ngày</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Đến ngày
-                    </label>
-                    <input
-                      type="date"
-                      value={filters.toDate}
-                      onChange={(e) => handleFilterChange('toDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between rounded-b-xl">
+                  <button
+                    onClick={handleClearFilters}
+                    className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                  >
+                    Xóa tất cả
+                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleApplyFilters}
+                      className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-sm hover:shadow transition-all"
+                    >
+                      Áp dụng
+                    </button>
                   </div>
                 </div>
               </div>

@@ -12,6 +12,7 @@ import { connectMongoDB } from '../config/database.js';
 import { connectNeo4j, getNeo4jSession } from '../config/database.js';
 import User from '../models/users.model.js';
 import Post from '../models/posts.model.js';
+import Comment from '../models/comments.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,8 +42,29 @@ const postTemplates = [
   "Why {topic} matters to me.",
 ];
 
+const commentTemplates = [
+  "Great post!",
+  "Very interesting perspective!",
+  "Thanks for sharing!",
+  "I agree with this.",
+  "Learned something new!",
+];
+
+const replyTemplates = [
+  "Thanks!",
+  "Glad you liked it!",
+  "Appreciate it!",
+];
+
 function randomElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getRandomVisibility() {
+  const rand = Math.random();
+  if (rand < 0.10) return 'private';      // 10% private
+  if (rand < 0.30) return 'followers';   // 20% followers
+  return 'public';                        // 70% public
 }
 
 async function seedQuick() {
@@ -125,15 +147,34 @@ async function seedQuick() {
         
         if (images.length > 0) postsWithImages++;
         
+        // Generate realistic likes
+        const likesCount = Math.floor(Math.random() * 50);
+        const likedBy = [];
+        
+        if (likesCount > 0) {
+          const maxLikers = Math.min(likesCount, insertedUsers.length);
+          const selectedLikers = new Set();
+          
+          while (selectedLikers.size < maxLikers) {
+            const randomUser = randomElement(insertedUsers);
+            selectedLikers.add(randomUser._id.toString());
+          }
+          
+          likedBy.push(...Array.from(selectedLikers));
+        }
+        
         posts.push({
           title: `Post about ${topic}`,
           content: template.replace('{topic}', topic),
           author: user.name,
           authorId: user._id,
           tags: [topic],
-          likes: Math.floor(Math.random() * 50),
+          likes: likesCount,
+          likedBy: likedBy,
           images,
+          visibility: getRandomVisibility(), // 10% private, 20% followers, 70% public
           isPublished: true,
+          createdAt: new Date(Date.now() - Math.random() * 1095 * 24 * 60 * 60 * 1000), // Random date in last 3 years
         });
       }
       await Post.insertMany(posts);
@@ -168,6 +209,56 @@ async function seedQuick() {
     `, { rels: relationships });
     await session2.close();
     console.log(`✅ Created ${relationships.length} relationships`);
+
+    // Create comments for 10% of posts
+    console.log('💬 Creating comments...');
+    const allPosts = await Post.find();
+    const postsWithComments = allPosts.filter(() => Math.random() < 0.10);
+    let totalComments = 0;
+    
+    for (const post of postsWithComments) {
+      const commentCount = Math.floor(Math.random() * 6) + 5; // 5-10 comments
+      const comments = [];
+      
+      for (let i = 0; i < commentCount; i++) {
+        const commenter = randomElement(insertedUsers);
+        const hasImage = Math.random() < 0.10 && SAMPLE_IMAGES.length > 0;
+        
+        comments.push({
+          content: randomElement(commentTemplates),
+          author: commenter.name,
+          authorId: commenter._id,
+          postId: post._id,
+          parentCommentId: null,
+          likes: Math.floor(Math.random() * 10),
+          images: hasImage ? [randomElement(SAMPLE_IMAGES)] : [],
+          isVisible: true,
+          createdAt: new Date(post.createdAt.getTime() + Math.random() * 24 * 60 * 60 * 1000),
+        });
+        totalComments++;
+      }
+      
+      const inserted = await Comment.insertMany(comments);
+      
+      // Add some replies (30% chance)
+      if (Math.random() < 0.30 && inserted.length > 0) {
+        const parent = randomElement(inserted);
+        const replier = randomElement(insertedUsers);
+        await Comment.create({
+          content: randomElement(replyTemplates),
+          author: replier.name,
+          authorId: replier._id,
+          postId: post._id,
+          parentCommentId: parent._id,
+          likes: 0,
+          images: [],
+          isVisible: true,
+          createdAt: new Date(parent.createdAt.getTime() + Math.random() * 12 * 60 * 60 * 1000),
+        });
+        totalComments++;
+      }
+    }
+    console.log(`✅ Created ${totalComments} comments for ${postsWithComments.length} posts`);
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log('\n' + '='.repeat(50));

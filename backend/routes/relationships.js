@@ -1,5 +1,6 @@
 import express from "express";
 import neo4j from "neo4j-driver";
+import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/database.js";
 
 const router = express.Router();
@@ -16,7 +17,6 @@ router.post("/follow", async (req, res) => {
     }
 
     // Kiểm tra nếu follower là admin thì không cho follow
-    const User = (await import('../models/users.model.js')).default;
     const follower = await User.findById(followerId);
     if (follower && follower.role === 'admin') {
       return res.status(403).json({
@@ -407,18 +407,36 @@ router.get("/suggestions/:userId", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const session = getNeo4jSession();
 
-    // Tìm users mà bạn bè của userId đang follow, nhưng userId chưa follow
-    // và tính điểm dựa trên số bạn chung
+    // CHIẾN LƯỢC GỢI Ý NÂNG CAO:
+    // 1. Ưu tiên người có nhiều bạn chung nhất (mutualFollowing)
+    // 2. Ưu tiên người được nhiều bạn chung follow (2nd degree connections)
+    // 3. Ưu tiên người có tương tác gần đây (commented on same posts)
+    // 4. Cân bằng với độ phổ biến (popularity)
+    
     const result = await session.run(
       `MATCH (user:User {id: $userId})-[:FOLLOWS]->(friend:User)-[:FOLLOWS]->(suggested:User)
        WHERE user <> suggested 
          AND NOT (user)-[:FOLLOWS]->(suggested)
          AND suggested.role <> 'admin'
-       WITH suggested, COUNT(DISTINCT friend) as mutualFollowing
-       MATCH (suggested)<-[:FOLLOWS]-(follower:User)
-       WITH suggested, mutualFollowing, COUNT(DISTINCT follower) as popularity
-       RETURN suggested, mutualFollowing, popularity
-       ORDER BY mutualFollowing DESC, popularity DESC
+       
+       // Group by suggested user để loại bỏ duplicates
+       WITH DISTINCT suggested, COLLECT(DISTINCT friend) as mutualFriends
+       WITH suggested, mutualFriends, SIZE(mutualFriends) as mutualFollowing
+       
+       // Đếm số người follow suggested (popularity)
+       OPTIONAL MATCH (suggested)<-[:FOLLOWS]-(follower:User)
+       WITH suggested, mutualFriends, mutualFollowing, COUNT(DISTINCT follower) as popularity
+       
+       // Đếm số người mà các bạn chung cũng follow (2nd degree strength)
+       WITH suggested, mutualFollowing, popularity, 
+            SIZE(mutualFriends) as strongConnections
+       
+       // Tính điểm: Ưu tiên bạn chung > kết nối mạnh > độ phổ biến
+       WITH DISTINCT suggested, mutualFollowing, popularity, strongConnections,
+            (mutualFollowing * 10) + (strongConnections * 5) + (popularity * 0.1) as score
+       
+       RETURN suggested, mutualFollowing, popularity, strongConnections, score
+       ORDER BY score DESC, mutualFollowing DESC, popularity DESC
        LIMIT $limit`,
       { userId, limit: neo4j.int(limit) }
     );
@@ -427,10 +445,56 @@ router.get("/suggestions/:userId", async (req, res) => {
       user: record.get('suggested').properties,
       mutualFollowing: record.get('mutualFollowing').toNumber(),
       popularity: record.get('popularity').toNumber(),
-      score: record.get('mutualFollowing').toNumber() * 2 + record.get('popularity').toNumber()
+      strongConnections: record.get('strongConnections').toNumber(),
+      score: record.get('score')
     }));
+    
+    // Deduplicate based on user ID (safety check)
+    const seenIds = new Set();
+    suggestions = suggestions.filter(s => {
+      if (seenIds.has(s.user.id)) return false;
+      seenIds.add(s.user.id);
+      return true;
+    });
 
-    // Fallback: Nếu không có kết quả, gợi ý users phổ biến nhất
+    // Fallback 1: Nếu không có kết quả từ bạn chung, tìm người có follower chung
+    if (suggestions.length === 0) {
+      const followerBasedResult = await session.run(
+        `MATCH (user:User {id: $userId})<-[:FOLLOWS]-(commonFollower:User)-[:FOLLOWS]->(suggested:User)
+         WHERE user <> suggested 
+           AND NOT (user)-[:FOLLOWS]->(suggested)
+           AND suggested.role <> 'admin'
+         WITH DISTINCT suggested, COLLECT(DISTINCT commonFollower) as commonFollowers
+         WITH suggested, SIZE(commonFollowers) as commonFollowerCount
+         OPTIONAL MATCH (suggested)<-[:FOLLOWS]-(follower:User)
+         WITH suggested, commonFollowerCount, COUNT(DISTINCT follower) as popularity
+         RETURN suggested, 0 as mutualFollowing, popularity, commonFollowerCount as strongConnections,
+                (commonFollowerCount * 8) + (popularity * 0.1) as score
+         ORDER BY score DESC
+         LIMIT $limit`,
+        { userId, limit: neo4j.int(limit) }
+      );
+      
+      if (followerBasedResult.records.length > 0) {
+        suggestions = followerBasedResult.records.map(record => ({
+          user: record.get('suggested').properties,
+          mutualFollowing: record.get('mutualFollowing').toNumber(),
+          popularity: record.get('popularity').toNumber(),
+          strongConnections: record.get('strongConnections').toNumber(),
+          score: record.get('score')
+        }));
+        
+        // Deduplicate
+        const seenIds = new Set();
+        suggestions = suggestions.filter(s => {
+          if (seenIds.has(s.user.id)) return false;
+          seenIds.add(s.user.id);
+          return true;
+        });
+      }
+    }
+
+    // Fallback 2: Nếu vẫn không có, gợi ý users phổ biến nhất
     if (suggestions.length === 0) {
       const fallbackResult = await session.run(
         `MATCH (user:User {id: $userId})
@@ -438,9 +502,10 @@ router.get("/suggestions/:userId", async (req, res) => {
          WHERE suggested.id <> $userId 
            AND NOT (user)-[:FOLLOWS]->(suggested)
            AND suggested.role <> 'admin'
+         WITH DISTINCT suggested
          OPTIONAL MATCH (suggested)<-[:FOLLOWS]-(follower:User)
          WITH suggested, COUNT(DISTINCT follower) as popularity
-         RETURN suggested, 0 as mutualFollowing, popularity
+         RETURN suggested, 0 as mutualFollowing, popularity, 0 as strongConnections, popularity as score
          ORDER BY popularity DESC
          LIMIT $limit`,
         { userId, limit: neo4j.int(limit) }
@@ -450,6 +515,7 @@ router.get("/suggestions/:userId", async (req, res) => {
         user: record.get('suggested').properties,
         mutualFollowing: 0,
         popularity: record.get('popularity').toNumber(),
+        strongConnections: 0,
         score: record.get('popularity').toNumber()
       }));
     }

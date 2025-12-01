@@ -36,6 +36,8 @@ const Users = () => {
     mutationFn: ({ id, data }) => usersAPI.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
       setEditingUser(null);
     },
   });
@@ -44,6 +46,8 @@ const Users = () => {
     mutationFn: usersAPI.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
     },
   });
 

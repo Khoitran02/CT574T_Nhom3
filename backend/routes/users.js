@@ -1,5 +1,6 @@
 import express from "express";
 import User from "../models/users.model.js";
+import Post from "../models/posts.model.js";
 import { getNeo4jSession } from "../config/database.js";
 import { upload } from "../config/upload.js";
 import logger from "../config/logger.js";
@@ -201,7 +202,6 @@ router.patch("/:id/avatar", upload.single('avatar'), async (req, res) => {
     }
 
     // Tạo post về việc cập nhật avatar
-    const Post = (await import('../models/posts.model.js')).default;
     const newPost = await Post.create({
       title: "Đã cập nhật ảnh đại diện",
       content: `${updatedUser.name} đã cập nhật ảnh đại diện mới`,

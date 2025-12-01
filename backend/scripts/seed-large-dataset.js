@@ -13,6 +13,7 @@ import { connectMongoDB } from '../config/database.js';
 import { connectNeo4j, getNeo4jSession } from '../config/database.js';
 import User from '../models/users.model.js';
 import Post from '../models/posts.model.js';
+import Comment from '../models/comments.model.js';
 import logger from '../config/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,11 +27,11 @@ const SAMPLE_IMAGES = fs.existsSync(imagesListPath)
 
 // Configuration
 const CONFIG = {
-  TOTAL_USERS: 1500,
-  POSTS_PER_USER: 800,
+  TOTAL_USERS: 1000,
+  POSTS_PER_USER: 550,
   USER_BATCH_SIZE: 100,    // Insert 100 users at a time
-  POST_BATCH_SIZE: 600,   // Insert 600 posts at a time
-  NEO4J_BATCH_SIZE: 500,   // Insert 500 relationships at a time
+  POST_BATCH_SIZE: 560,   // Insert 560 posts at a time
+  NEO4J_BATCH_SIZE: 480,   // Insert 480 relationships at a time
 };
 
 // Sample data generators
@@ -63,6 +64,19 @@ const postTemplates = [
   "5 things I learned about {topic} today.",
 ];
 
+const commentTemplates = [
+  "Great post! I completely agree with your perspective.",
+  "This is really interesting. Can you share more details?",
+  "Thanks for sharing this valuable insight!",
+  "I have a different view on this topic...",
+  "Excellent points made here!",
+  "This reminds me of a similar experience I had.",
+  "Very informative, learned something new today!",
+  "Could you elaborate more on this?",
+  "Totally resonates with me!",
+  "Interesting take on {topic}!",
+];
+
 // Helper functions
 function randomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -82,6 +96,13 @@ function generateBio(topic) {
 
 function generatePostContent(template, topic) {
   return template.replace('{topic}', topic);
+}
+
+function getRandomVisibility() {
+  const rand = Math.random();
+  if (rand < 0.10) return 'private';      // 10% private
+  if (rand < 0.30) return 'followers';   // 20% followers (0.10 + 0.20)
+  return 'public';                        // 70% public
 }
 
 // Progress tracking
@@ -215,7 +236,23 @@ async function generateAndInsertPosts(users) {
         const template = randomElement(postTemplates);
         const topic = Math.random() > 0.3 ? userTopic : randomElement(topics);
         const content = generatePostContent(template, topic);
-        const likes = Math.floor(Math.random() * 100);
+        
+        // Generate realistic likes
+        const likesCount = Math.floor(Math.random() * 100);
+        const likedBy = [];
+        
+        // Randomly select users who liked this post
+        if (likesCount > 0 && users.length > 0) {
+          const maxLikers = Math.min(likesCount, users.length);
+          const selectedLikers = new Set();
+          
+          while (selectedLikers.size < maxLikers) {
+            const randomUser = randomElement(users);
+            selectedLikers.add(randomUser._id.toString());
+          }
+          
+          likedBy.push(...Array.from(selectedLikers).map(id => id));
+        }
         
         // 50% chance to have images
         const hasImages = Math.random() < 0.5;
@@ -234,11 +271,12 @@ async function generateAndInsertPosts(users) {
           author: user.name,
           authorId: user._id,
           tags: [topic],
-          likes,
-          likedBy: [],
+          likes: likesCount,
+          likedBy: likedBy,
           images,
+          visibility: getRandomVisibility(), // 10% private, 20% followers, 70% public
           isPublished: true,
-          createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000), // Random date in last year
+          createdAt: new Date(Date.now() - Math.random() * 1095 * 24 * 60 * 60 * 1000), // Random date in last 3 years
         });
       }
 
@@ -256,24 +294,65 @@ async function generateAndInsertPosts(users) {
 }
 
 async function createRandomFollowRelationships(users) {
-  console.log('\n👥 Creating follow relationships...');
+  console.log('\n👥 Creating follow relationships with community clusters...');
   
-  // Each user will follow 10-50 random users
   const totalRelationships = CONFIG.TOTAL_USERS * 30; // Average 30 follows per user
   const progress = new ProgressTracker(totalRelationships, 'Relationships');
   const session = getNeo4jSession();
 
   try {
     const relationships = [];
+    
+    // CHIẾN LƯỢC TẠO CỘNG ĐỒNG:
+    // 1. Chia users thành các cộng đồng (clusters) - mỗi cộng đồng 50-100 người
+    // 2. Trong cùng cộng đồng: 70% follows (high density)
+    // 3. Giữa các cộng đồng: 30% follows (bridges)
+    
+    const clusterSize = 75; // Mỗi cộng đồng trung bình 75 người
+    const numClusters = Math.ceil(users.length / clusterSize);
+    const clusters = [];
+    
+    // Chia users vào các clusters
+    for (let i = 0; i < numClusters; i++) {
+      const start = i * clusterSize;
+      const end = Math.min(start + clusterSize, users.length);
+      clusters.push(users.slice(start, end));
+    }
+    
+    console.log(`Created ${numClusters} communities with ~${clusterSize} users each`);
 
     for (const user of users) {
+      // Tìm cluster của user này
+      const userClusterIndex = clusters.findIndex(cluster => 
+        cluster.some(u => u._id.toString() === user._id.toString())
+      );
+      const userCluster = clusters[userClusterIndex];
+      
       const followCount = Math.floor(Math.random() * 40) + 10; // 10-50 follows
       const followedUsers = new Set();
-
-      for (let i = 0; i < followCount; i++) {
-        const randomUser = randomElement(users);
+      
+      // 70% follows từ cùng cluster (bạn bè gần)
+      const sameClusterFollows = Math.floor(followCount * 0.7);
+      for (let i = 0; i < sameClusterFollows; i++) {
+        const randomUser = randomElement(userCluster);
         
-        // Don't follow yourself, don't duplicate
+        if (randomUser._id.toString() !== user._id.toString() && 
+            !followedUsers.has(randomUser._id.toString())) {
+          followedUsers.add(randomUser._id.toString());
+          
+          relationships.push({
+            followerId: user._id.toString(),
+            followeeId: randomUser._id.toString(),
+          });
+        }
+      }
+      
+      // 30% follows từ clusters khác (bridges giữa cộng đồng)
+      const crossClusterFollows = followCount - followedUsers.size;
+      for (let i = 0; i < crossClusterFollows; i++) {
+        const randomCluster = randomElement(clusters);
+        const randomUser = randomElement(randomCluster);
+        
         if (randomUser._id.toString() !== user._id.toString() && 
             !followedUsers.has(randomUser._id.toString())) {
           followedUsers.add(randomUser._id.toString());
@@ -301,9 +380,103 @@ async function createRandomFollowRelationships(users) {
       await session.run(query, { rels: batch });
       progress.update(batch.length);
     }
+    
+    console.log(`\n✅ Created ${relationships.length.toLocaleString()} relationships`);
+    console.log(`   - Within communities: ~70%`);
+    console.log(`   - Between communities: ~30%`);
   } finally {
     await session.close();
   }
+}
+
+async function createCommentsForPosts(users) {
+  console.log('\n💬 Creating comments for 500 posts (3-5 comments each, 40 recent posts)...');
+  
+  // OPTIMIZATION: Không load tất cả posts vào RAM
+  // Chỉ lấy _id để chọn, sau đó query từng batch nhỏ
+  
+  // Get 40 most recent post IDs
+  const recentPostIds = await Post.find()
+    .sort({ createdAt: -1 })
+    .limit(40)
+    .select('_id createdAt')
+    .lean();
+  
+  console.log(`Found ${recentPostIds.length} recent posts`);
+  
+  // Get 460 random older post IDs
+  const totalPosts = await Post.countDocuments();
+  const skipCount = 40; // Skip the 40 most recent
+  
+  // Limit to 5000 posts to prevent memory issues when shuffling
+  const sampleSize = Math.min(5000, totalPosts - skipCount);
+  const olderPostIds = await Post.find()
+    .sort({ createdAt: -1 })
+    .skip(skipCount)
+    .limit(sampleSize)
+    .select('_id createdAt')
+    .lean();
+  
+  // Randomly select 460 from older posts
+  const shuffled = [...olderPostIds].sort(() => Math.random() - 0.5);
+  const selectedOlderIds = shuffled.slice(0, 460);
+  
+  // Combine: 40 recent + 460 random = 500 posts
+  const selectedPostIds = [...recentPostIds, ...selectedOlderIds];
+  
+  console.log(`Selected ${selectedPostIds.length} posts to receive comments (${recentPostIds.length} recent + ${selectedOlderIds.length} random)`);
+  
+  const progress = new ProgressTracker(selectedPostIds.length, 'Posts with comments');
+  let totalComments = 0;
+  
+  // Process in batches to avoid memory issues
+  const BATCH_SIZE = 50;
+  
+  for (let batchIndex = 0; batchIndex < selectedPostIds.length; batchIndex += BATCH_SIZE) {
+    const batchIds = selectedPostIds.slice(batchIndex, batchIndex + BATCH_SIZE);
+    const commentsToInsert = [];
+    
+    for (const postData of batchIds) {
+      const commentCount = Math.floor(Math.random() * 3) + 3; // 3-5 comments
+      
+      // Create comments for this post
+      for (let i = 0; i < commentCount; i++) {
+        const commenter = randomElement(users);
+        const template = randomElement(commentTemplates);
+        const content = template.replace('{topic}', randomElement(topics));
+        
+        const comment = {
+          content,
+          author: commenter.name,
+          authorId: commenter._id,
+          authorAvatar: commenter.avatar,
+          postId: postData._id,
+          parentCommentId: null,
+          likes: Math.floor(Math.random() * 20),
+          likedBy: [],
+          images: [],
+          isVisible: true,
+          createdAt: new Date(postData.createdAt.getTime() + Math.random() * 24 * 60 * 60 * 1000), // Within 24h after post
+        };
+        
+        commentsToInsert.push(comment);
+        totalComments++;
+      }
+      
+      progress.update(1);
+    }
+    
+    // Insert batch of comments
+    try {
+      if (commentsToInsert.length > 0) {
+        await Comment.insertMany(commentsToInsert);
+      }
+    } catch (error) {
+      console.error(`\nError creating comments batch:`, error.message);
+    }
+  }
+  
+  console.log(`\n✅ Created ${totalComments.toLocaleString()} comments`);
 }
 
 async function getStats() {
@@ -311,6 +484,7 @@ async function getStats() {
   
   const userCount = await User.countDocuments();
   const postCount = await Post.countDocuments();
+  const commentCount = await Comment.countDocuments();
   
   const session = getNeo4jSession();
   const result = await session.run(`
@@ -324,6 +498,7 @@ async function getStats() {
   return {
     users: userCount,
     posts: postCount,
+    comments: commentCount,
     relationships: relationshipCount,
   };
 }
@@ -365,23 +540,28 @@ async function main() {
     await createRandomFollowRelationships(insertedUsers);
     console.log('✅ Created follow relationships');
 
-    // Step 6: Get final stats
+    // Step 6: Create comments for posts
+    await createCommentsForPosts(insertedUsers);
+    console.log('✅ Created comments');
+
+    // Step 7: Get final stats
     const stats = await getStats();
     
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
     
-    console.log('\n' + '='.repeat(60));
+    console.log('='.repeat(60));
     console.log('✨ SEEDING COMPLETED SUCCESSFULLY!');
     console.log('='.repeat(60));
     console.log(`📊 Final Statistics:`);
     console.log(`   - Total Users: ${stats.users.toLocaleString()}`);
     console.log(`   - Total Posts: ${stats.posts.toLocaleString()}`);
+    console.log(`   - Total Comments: ${stats.comments.toLocaleString()}`);
     console.log(`   - Total Relationships: ${stats.relationships.toLocaleString()}`);
     console.log(`   - Total Time: ${totalTime}s`);
     console.log(`   - Posts/second: ${(stats.posts / totalTime).toFixed(2)}`);
     console.log('='.repeat(60));
     console.log('\n🎉 You can now use the application with the seeded data!');
-    console.log('📝 Default password for all users: password123\n');
+    console.log('📝 Default password for all users: 123456@aB\n');
 
   } catch (error) {
     console.error('\n❌ Error during seeding:', error);

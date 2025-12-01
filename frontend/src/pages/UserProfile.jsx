@@ -38,9 +38,9 @@ const UserProfile = () => {
   });
 
   const { data: postsResponse } = useQuery({
-    queryKey: ['posts'],
-    queryFn: postsAPI.getAll,
-    enabled: !!userId,
+    queryKey: ['posts', currentUser?._id],
+    queryFn: () => postsAPI.getAll({ userId: currentUser?._id }), // Truyền currentUser._id để filter visibility
+    enabled: !!userId && !!currentUser,
   });
 
   if (!currentUser || userLoading) return <LoadingSpinner />;
@@ -58,7 +58,7 @@ const UserProfile = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Trang cá nhân</h1>
             <button

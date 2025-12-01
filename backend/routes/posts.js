@@ -1,6 +1,7 @@
 import express from "express";
 import Post from "../models/posts.model.js";
 import Comment from "../models/comments.model.js";
+import User from "../models/users.model.js";
 import { getNeo4jSession } from "../config/database.js";
 import { upload } from "../config/upload.js";
 
@@ -12,9 +13,43 @@ router.get("/", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
+    const currentUserId = req.query.userId; // ID của user đang xem
     
     // Build filter query
-    const filter = {};
+    const filter = { isPublished: true }; // Chỉ lấy bài viết đã publish
+    
+    // KIỂM SOÁT QUYỀN RIÊNG TƯ
+    if (currentUserId) {
+      // Lấy danh sách người mà currentUser đang follow
+      const session = getNeo4jSession();
+      const followingResult = await session.run(
+        `MATCH (u:User {id: $userId})-[:FOLLOWS]->(followed:User)
+         RETURN followed.id as followedId`,
+        { userId: currentUserId }
+      );
+      await session.close();
+      
+      const followingIds = followingResult.records.map(record => record.get('followedId'));
+      
+      // Filter visibility:
+      // 1. Public posts: Hiển thị cho tất cả
+      // 2. Followers posts: Chỉ hiển thị nếu currentUser follow tác giả HOẶC là chính tác giả
+      // 3. Private posts: Chỉ hiển thị nếu là chính tác giả
+      filter.$or = [
+        { visibility: 'public' },
+        { 
+          visibility: 'followers',
+          $or: [
+            { authorId: { $in: followingIds } },
+            { authorId: currentUserId }
+          ]
+        },
+        { visibility: 'private', authorId: currentUserId }
+      ];
+    } else {
+      // Người dùng chưa đăng nhập: chỉ hiển thị public posts
+      filter.visibility = 'public';
+    }
     
     // Filter by author name (case-insensitive partial match)
     if (req.query.author) {
@@ -39,19 +74,35 @@ router.get("/", async (req, res) => {
     const posts = await Post.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .populate('authorId', 'avatar name username')
+      .populate('likedBy', 'name email avatar');
       
     const data = posts.map((post) => ({
       id: post._id.toString(),
       content: post.content,
       author: post.author,
-      userId: post.authorId?.toString(),
+      userId: post.authorId?._id?.toString() || post.authorId?.toString(),
+      authorAvatar: post.authorId?.avatar || '',
       createdAt: post.createdAt,
       likes: post.likes || 0,
-      likedBy: post.likedBy?.map(id => id.toString()) || [],
+      likedBy: post.likedBy?.map(user => {
+        if (typeof user === 'object' && user._id) {
+          return {
+            _id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar
+          };
+        }
+        return user.toString();
+      }) || [],
       images: post.images || [],
       mentions: post.mentions || [],
       emojis: post.emojis || [],
+      visibility: post.visibility || 'public',
+      isEdited: post.isEdited || false,
+      editedAt: post.editedAt,
     }));
 
     res.status(200).json({
@@ -79,7 +130,6 @@ router.post("/", upload.array('images', 5), async (req, res) => {
   try {
     // Kiểm tra nếu là admin thì không cho tạo post
     if (req.body.userId) {
-      const User = (await import('../models/users.model.js')).default;
       const user = await User.findById(req.body.userId);
       if (user && user.role === 'admin') {
         return res.status(403).json({
@@ -105,6 +155,7 @@ router.post("/", upload.array('images', 5), async (req, res) => {
       mentions: mentions,
       emojis: emojis,
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished : true,
+      visibility: req.body.visibility || 'public',
     };
 
     const newPost = new Post(postData);
@@ -242,6 +293,95 @@ router.post("/:postId/like", async (req, res) => {
     res.status(500).json({ 
       message: "Lỗi khi like post", 
       error: error.message 
+    });
+  }
+});
+
+// Cập nhật post - PUT /api/posts/:id
+router.put("/:id", upload.array('images', 5), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      content: req.body.content,
+      isEdited: true,
+      editedAt: new Date(),
+    };
+
+    // Parse mentions và emojis nếu có
+    if (req.body.mentions) {
+      updateData.mentions = JSON.parse(req.body.mentions);
+    }
+    if (req.body.emojis) {
+      updateData.emojis = JSON.parse(req.body.emojis);
+    }
+    
+    // Cập nhật visibility nếu có
+    if (req.body.visibility) {
+      updateData.visibility = req.body.visibility;
+    }
+
+    // Xử lý images: combine existing + new uploaded
+    let finalImages = [];
+    
+    // Giữ lại existing images nếu có
+    if (req.body.existingImages) {
+      const existingImages = JSON.parse(req.body.existingImages);
+      finalImages = [...existingImages];
+    }
+    
+    // Thêm new uploaded images
+    if (req.files && req.files.length > 0) {
+      const newImagePaths = req.files.map(file => `/uploads/user-images/${file.filename}`);
+      finalImages = [...finalImages, ...newImagePaths];
+    }
+    
+    updateData.images = finalImages;
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ message: "Post không tồn tại" });
+    }
+
+    res.status(200).json({
+      message: "Cập nhật post thành công",
+      data: updatedPost,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi cập nhật post",
+      error: error.message,
+    });
+  }
+});
+
+// Xóa post - DELETE /api/posts/:id
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const deletedPost = await Post.findByIdAndUpdate(
+      id,
+      { isPublished: false },
+      { new: true }
+    );
+
+    if (!deletedPost) {
+      return res.status(404).json({ message: "Post không tồn tại" });
+    }
+
+    res.status(200).json({
+      message: "Xóa post thành công",
+      data: deletedPost,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi xóa post",
+      error: error.message,
     });
   }
 });

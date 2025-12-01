@@ -1,8 +1,12 @@
 import { Heart, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { commentsAPI } from '../../services/api';
 
 const PostCard = ({ post, onEdit, onDelete }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const MAX_CONTENT_LENGTH = 200;
+  
   // Fetch comments để đếm
   const { data: commentsData } = useQuery({
     queryKey: ['comments', post.id],
@@ -26,6 +30,13 @@ const PostCard = ({ post, onEdit, onDelete }) => {
 
   const comments = commentsData?.data?.data || [];
   const totalCommentsCount = countAllComments(comments);
+
+  // Check if content needs truncation
+  const contentLength = post.content?.length || 0;
+  const shouldTruncate = contentLength > MAX_CONTENT_LENGTH;
+  const displayContent = shouldTruncate && !isExpanded 
+    ? post.content.substring(0, MAX_CONTENT_LENGTH) + '...' 
+    : post.content;
 
   return (
     <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -52,7 +63,19 @@ const PostCard = ({ post, onEdit, onDelete }) => {
         </div>
       </div>
 
-      <p className="text-gray-700 mb-4 line-clamp-3 text-left">{post.content}</p>
+      <div className="text-gray-700 mb-4 text-left">
+        <p className="whitespace-pre-wrap inline">
+          {displayContent}
+          {shouldTruncate && (
+            <span
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-blue-600 hover:text-blue-800 font-semibold text-sm ml-1 cursor-pointer transition-colors inline"
+            >
+              {isExpanded ? 'Ẩn bớt' : 'Xem thêm'}
+            </span>
+          )}
+        </p>
+      </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">

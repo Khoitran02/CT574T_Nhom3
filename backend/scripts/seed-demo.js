@@ -9,9 +9,17 @@ import { connectMongoDB } from '../config/database.js';
 import { connectNeo4j, getNeo4jSession } from '../config/database.js';
 import User from '../models/users.model.js';
 import Post from '../models/posts.model.js';
+import Comment from '../models/comments.model.js';
 
 console.log('🧪 Demo Seeder - Verify Setup');
 console.log('Creating 10 users with 10 posts each...\n');
+
+function getRandomVisibility() {
+  const rand = Math.random();
+  if (rand < 0.10) return 'private';
+  if (rand < 0.30) return 'followers';
+  return 'public';
+}
 
 async function demoSeed() {
   const startTime = Date.now();
@@ -61,13 +69,30 @@ async function demoSeed() {
 
     for (const user of insertedUsers) {
       for (let i = 1; i <= 10; i++) {
+        // Generate random likes
+        const likesCount = i;
+        const likedBy = [];
+        
+        if (likesCount > 0) {
+          const maxLikers = Math.min(likesCount, insertedUsers.length);
+          for (let j = 0; j < maxLikers; j++) {
+            const liker = insertedUsers[j % insertedUsers.length];
+            if (!likedBy.includes(liker._id.toString())) {
+              likedBy.push(liker._id);
+            }
+          }
+        }
+        
         allPosts.push({
           title: `Post ${i} by ${user.username}`,
           content: `This is post number ${i} from ${user.name}. Testing the system!`,
           author: user.name,
           authorId: user._id,
           tags: ['demo', 'test'],
-          likes: i,
+          likes: likesCount,
+          likedBy: likedBy,
+          visibility: getRandomVisibility(),
+          createdAt: new Date(Date.now() - Math.random() * 1095 * 24 * 60 * 60 * 1000), // Random date in last 3 years
         });
       }
     }
@@ -85,9 +110,30 @@ async function demoSeed() {
     
     await session.close();
 
+    // Create comments for demo posts
+    console.log('💬 Creating demo comments...');
+    const demoPosts = await Post.find().limit(10); // Get some demo posts
+    let totalComments = 0;
+    
+    for (const post of demoPosts.slice(0, 1)) { // 1 post with comments
+      for (let i = 0; i < 5; i++) {
+        const commenter = insertedUsers[i % insertedUsers.length];
+        await Comment.create({
+          content: `Demo comment ${i + 1} on this post`,
+          author: commenter.name,
+          authorId: commenter._id,
+          postId: post._id,
+          likes: i,
+          isVisible: true,
+        });
+        totalComments++;
+      }
+    }
+    console.log(`✅ Created ${totalComments} demo comments`);
+
     const time = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\n✨ Demo completed in ${time}s`);
-    console.log('📊 Created: 10 users, 100 posts, ~25 relationships');
+    console.log(`📊 Created: 10 users, 100 posts, ${totalComments} comments, ~25 relationships`);
     console.log('🔑 Login: user1 / password123\n');
 
   } catch (error) {

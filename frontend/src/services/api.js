@@ -53,7 +53,13 @@ export const postsAPI = {
       },
     });
   },
-  update: (id, data) => api.put(`/posts/${id}`, data),
+  update: (id, formData) => {
+    return api.put(`/posts/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   delete: (id) => api.delete(`/posts/${id}`),
   like: (postId, userId) => api.post(`/posts/${postId}/like`, { userId }),
   
@@ -68,6 +74,13 @@ export const commentsAPI = {
   getByPostId: (postId) => api.get(`/comments/post/${postId}`),
   create: (formData) => {
     return api.post('/comments', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  update: (id, formData) => {
+    return api.put(`/comments/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

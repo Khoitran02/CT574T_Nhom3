@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Modal from '../components/UI/Modal';
 import PostCard from '../components/Feed/PostCard';
 import CreatePostButton from '../components/Feed/CreatePostButton';
+import CreatePostForm from '../components/Feed/CreatePostForm';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Profile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: '', email: '', bio: '' });
   const [passwordFormData, setPasswordFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [error, setError] = useState('');
@@ -61,8 +63,8 @@ const Profile = () => {
   });
 
   const { data: postsResponse } = useQuery({
-    queryKey: ['posts'],
-    queryFn: postsAPI.getAll,
+    queryKey: ['posts', currentUser?._id],
+    queryFn: () => postsAPI.getAll({ userId: currentUser?._id }),
     enabled: !!currentUser,
   });
 
@@ -77,6 +79,8 @@ const Profile = () => {
       setError('');
       setTimeout(() => setSuccess(''), 3000);
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
     },
     onError: (err) => {
       setError(err.response?.data?.message || 'Lỗi khi cập nhật thông tin');
@@ -112,6 +116,7 @@ const Profile = () => {
       setTimeout(() => setSuccess(''), 3000);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
     },
     onError: (err) => {
       setError(err.response?.data?.message || 'Lỗi khi cập nhật ảnh đại diện');
@@ -208,7 +213,7 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Trang cá nhân</h1>
             <button
@@ -322,23 +327,24 @@ const Profile = () => {
         </div>
 
         {/* My Posts Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="space-y-4">
+          <CreatePostButton onClick={() => setShowCreatePostModal(true)} />
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
               <FileText className="w-5 h-5" />
               Bài viết của tôi ({myPosts.length})
             </h3>
-            <CreatePostButton />
+            {myPosts.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Bạn chưa đăng bài viết nào.</p>
+            ) : (
+              <div className="space-y-4">
+                {myPosts.map((post) => (
+                  <PostCard key={post.id} post={post} currentUser={currentUser} />
+                ))}
+              </div>
+            )}
           </div>
-          {myPosts.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Bạn chưa đăng bài viết nào.</p>
-          ) : (
-            <div className="space-y-4">
-              {myPosts.map((post) => (
-                <PostCard key={post.id} post={post} currentUser={currentUser} />
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -576,6 +582,18 @@ const Profile = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Create Post Modal */}
+      <Modal
+        isOpen={showCreatePostModal}
+        onClose={() => setShowCreatePostModal(false)}
+        title="Tạo bài viết mới"
+      >
+        <CreatePostForm 
+          onClose={() => setShowCreatePostModal(false)}
+          currentUser={currentUser}
+        />
       </Modal>
     </div>
   );

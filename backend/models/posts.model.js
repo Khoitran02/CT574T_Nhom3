@@ -50,6 +50,19 @@ const postSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    visibility: {
+      type: String,
+      enum: ['public', 'followers', 'private'],
+      default: 'public',
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
