@@ -27,11 +27,11 @@ const SAMPLE_IMAGES = fs.existsSync(imagesListPath)
 
 // Configuration
 const CONFIG = {
-  TOTAL_USERS: 1000,
-  POSTS_PER_USER: 550,
+  TOTAL_USERS: 500,
+  POSTS_PER_USER: 100,
   USER_BATCH_SIZE: 100,    // Insert 100 users at a time
-  POST_BATCH_SIZE: 560,   // Insert 560 posts at a time
-  NEO4J_BATCH_SIZE: 480,   // Insert 480 relationships at a time
+  POST_BATCH_SIZE: 100,   // Insert 100 posts at a time
+  NEO4J_BATCH_SIZE: 400,   // Insert 400 relationships at a time
 };
 
 // Sample data generators
@@ -296,7 +296,7 @@ async function generateAndInsertPosts(users) {
 async function createRandomFollowRelationships(users) {
   console.log('\n👥 Creating follow relationships with community clusters...');
   
-  const totalRelationships = CONFIG.TOTAL_USERS * 30; // Average 30 follows per user
+  const totalRelationships = CONFIG.TOTAL_USERS * 20; // Average 20 follows per user
   const progress = new ProgressTracker(totalRelationships, 'Relationships');
   const session = getNeo4jSession();
 
@@ -308,7 +308,7 @@ async function createRandomFollowRelationships(users) {
     // 2. Trong cùng cộng đồng: 70% follows (high density)
     // 3. Giữa các cộng đồng: 30% follows (bridges)
     
-    const clusterSize = 75; // Mỗi cộng đồng trung bình 75 người
+    const clusterSize = 50; // Mỗi cộng đồng trung bình 50 người
     const numClusters = Math.ceil(users.length / clusterSize);
     const clusters = [];
     
@@ -328,7 +328,7 @@ async function createRandomFollowRelationships(users) {
       );
       const userCluster = clusters[userClusterIndex];
       
-      const followCount = Math.floor(Math.random() * 40) + 10; // 10-50 follows
+      const followCount = Math.floor(Math.random() * 20) + 10; // 10-30 follows
       const followedUsers = new Set();
       
       // 70% follows từ cùng cluster (bạn bè gần)
@@ -390,26 +390,26 @@ async function createRandomFollowRelationships(users) {
 }
 
 async function createCommentsForPosts(users) {
-  console.log('\n💬 Creating comments for 500 posts (3-5 comments each, 40 recent posts)...');
+  console.log('\n💬 Creating comments for 200 posts (3-5 comments each, 20 recent posts)...');
   
   // OPTIMIZATION: Không load tất cả posts vào RAM
   // Chỉ lấy _id để chọn, sau đó query từng batch nhỏ
   
-  // Get 40 most recent post IDs
+  // Get 20 most recent post IDs
   const recentPostIds = await Post.find()
     .sort({ createdAt: -1 })
-    .limit(40)
+    .limit(20)
     .select('_id createdAt')
     .lean();
   
   console.log(`Found ${recentPostIds.length} recent posts`);
   
-  // Get 460 random older post IDs
+  // Get 180 random older post IDs
   const totalPosts = await Post.countDocuments();
-  const skipCount = 40; // Skip the 40 most recent
+  const skipCount = 20; // Skip the 20 most recent
   
-  // Limit to 5000 posts to prevent memory issues when shuffling
-  const sampleSize = Math.min(5000, totalPosts - skipCount);
+  // Limit to 2000 posts to prevent memory issues when shuffling
+  const sampleSize = Math.min(2000, totalPosts - skipCount);
   const olderPostIds = await Post.find()
     .sort({ createdAt: -1 })
     .skip(skipCount)
@@ -417,11 +417,11 @@ async function createCommentsForPosts(users) {
     .select('_id createdAt')
     .lean();
   
-  // Randomly select 460 from older posts
+  // Randomly select 180 from older posts
   const shuffled = [...olderPostIds].sort(() => Math.random() - 0.5);
-  const selectedOlderIds = shuffled.slice(0, 460);
+  const selectedOlderIds = shuffled.slice(0, 180);
   
-  // Combine: 40 recent + 460 random = 500 posts
+  // Combine: 20 recent + 180 random = 200 posts
   const selectedPostIds = [...recentPostIds, ...selectedOlderIds];
   
   console.log(`Selected ${selectedPostIds.length} posts to receive comments (${recentPostIds.length} recent + ${selectedOlderIds.length} random)`);
@@ -510,7 +510,7 @@ async function main() {
   console.log(`   - Users: ${CONFIG.TOTAL_USERS.toLocaleString()}`);
   console.log(`   - Posts per user: ${CONFIG.POSTS_PER_USER.toLocaleString()}`);
   console.log(`   - Total posts: ${(CONFIG.TOTAL_USERS * CONFIG.POSTS_PER_USER).toLocaleString()}`);
-  console.log(`   - Estimated time: 30-60 minutes (depending on hardware)\n`);
+  console.log(`   - Estimated time: 10-20 minutes (depending on hardware)\n`);
 
   const startTime = Date.now();
 
