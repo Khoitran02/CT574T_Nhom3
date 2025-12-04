@@ -2,6 +2,7 @@ import { X, UserPlus, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { relationshipsAPI } from '../../services/api';
+import { getResourceUrl } from '../../utils/url';
 
 const LikesModal = ({ likes = [], onClose, currentUser }) => {
   const navigate = useNavigate();

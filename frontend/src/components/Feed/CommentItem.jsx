@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Reply, Heart, MoreHorizontal, Pencil, Trash2, Maximize2 } from 'lucide-react';
 import { commentsAPI } from '../../services/api';
+import { getResourceUrl } from '../../utils/url';
 import CommentForm from './CommentForm';
 import ImageModal from '../UI/ImageModal';
 
