@@ -15,8 +15,8 @@ router.get("/", async (req, res) => {
     const skip = (page - 1) * limit;
     const currentUserId = req.query.userId; // ID của user đang xem
     
-    // Build filter query
-    const filter = { isPublished: true }; // Chỉ lấy bài viết đã publish
+    // Build filter query - Admin không filter isPublished
+    const filter = {};
     
     // KIỂM SOÁT QUYỀN RIÊNG TƯ
     if (currentUserId) {

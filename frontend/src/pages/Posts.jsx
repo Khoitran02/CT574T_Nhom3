@@ -20,7 +20,7 @@ const Posts = () => {
     queryFn: () => postsAPI.getAll({ 
       page, 
       limit,
-      userId: currentUser?._id // Admin xem tất cả, nhưng vẫn tuân thủ visibility
+      userId: currentUser?._id
     }),
   });
 
