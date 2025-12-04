@@ -284,7 +284,7 @@ const PostCard = ({ post, currentUser }) => {
     setShowImageModal(true);
   };
 
-  const imageUrls = post.images?.map(img => `http://localhost:3001${img}`) || [];
+  const imageUrls = post.images?.map(img => getResourceUrl(img)) || [];
   const contentLength = post.content?.length || 0;
   const shouldTruncate = contentLength > MAX_CONTENT_LENGTH;
   const displayContent = shouldTruncate && !isExpanded 
@@ -305,7 +305,7 @@ const PostCard = ({ post, currentUser }) => {
       <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
         {post.authorAvatar ? (
           <img 
-            src={`http://localhost:3001${post.authorAvatar}`}
+            src={getResourceUrl(post.authorAvatar)}
             alt={post.author}
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
             onError={(e) => {
@@ -451,7 +451,7 @@ const PostCard = ({ post, currentUser }) => {
             {post.images.slice(0, 6).map((image, index) => (
               <div key={index} className="relative group cursor-pointer" onClick={() => handleImageClick(index)}>
                 <img
-                  src={`http://localhost:3001${image}`}
+                  src={getResourceUrl(image)}
                   alt={`Post image ${index + 1}`}
                   className="w-full max-h-96 object-contain rounded-lg"
                   onError={(e) => {

@@ -204,7 +204,7 @@ const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
         <div className="flex items-start gap-2">
           {comment.authorAvatar ? (
             <img 
-              src={`http://localhost:3001${comment.authorAvatar}`}
+              src={getResourceUrl(comment.authorAvatar)}
               alt={comment.author}
               className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={handleNavigateToProfile}
@@ -292,7 +292,7 @@ const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
                 {comment.images.map((image, index) => (
                   <div key={index} className="relative group cursor-pointer">
                     <img
-                      src={`http://localhost:3001${image}`}
+                      src={getResourceUrl(image)}
                       alt={`Comment image ${index + 1}`}
                       className="w-full h-24 sm:h-28 object-cover rounded border hover:opacity-90 transition-opacity"
                       onClick={() => handleImageClick(index)}
@@ -397,7 +397,7 @@ const CommentItem = ({ comment, onReply, currentUser, level = 0, postId }) => {
       {/* Image Modal */}
       {showImageModal && comment.images && (
         <ImageModal
-          images={comment.images.map(img => `http://localhost:3001${img}`)}
+          images={comment.images.map(img => getResourceUrl(img))}
           initialIndex={selectedImageIndex}
           onClose={() => setShowImageModal(false)}
         />

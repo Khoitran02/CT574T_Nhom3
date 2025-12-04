@@ -33,6 +33,7 @@ api.interceptors.response.use(
 // Users API
 export const usersAPI = {
   getAll: (params = {}) => api.get('/users', { params }),
+  getStats: () => api.get('/users/stats'),
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.patch(`/users/${id}`, data),

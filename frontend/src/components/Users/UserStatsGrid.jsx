@@ -1,10 +1,10 @@
-import { UserCheck, User, Edit } from 'lucide-react';
+import { UserCheck, Users, ShieldCheck } from 'lucide-react';
 import StatCard from '../UI/StatCard';
 
-const UserStatsGrid = ({ users, total }) => {
-  const totalUsers = total || users.length;
-  const activeUsers = users.filter(u => u.isActive).length;
-  const dbStatus = users.length > 0 ? 'MongoDB' : 'N/A';
+const UserStatsGrid = ({ users, total, stats }) => {
+  const totalUsers = stats?.total || total || users.length;
+  const regularUsers = stats?.regularUsers || users.filter(u => u.role === 'user').length;
+  const adminCount = stats?.admins || users.filter(u => u.role === 'admin').length;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -15,16 +15,16 @@ const UserStatsGrid = ({ users, total }) => {
         label="Total Users"
       />
       <StatCard 
-        icon={User}
-        iconColor="text-blue-600"
-        value={activeUsers}
-        label="Active Users"
+        icon={Users}
+        iconColor="text-purple-600"
+        value={regularUsers}
+        label="Regular Users"
       />
       <StatCard 
-        icon={Edit}
-        iconColor="text-purple-600"
-        value={dbStatus}
-        label="Database Status"
+        icon={ShieldCheck}
+        iconColor="text-orange-600"
+        value={adminCount}
+        label="Admins"
       />
     </div>
   );

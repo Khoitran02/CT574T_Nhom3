@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Image, Smile, AtSign, Save } from 'lucide-react';
 import { relationshipsAPI } from '../../services/api';
+import { getResourceUrl } from '../../utils/url';
 
 const COMMON_EMOJIS = [
   '😀', '😂', '❤️', '👍', '🎉', '😍', '🤔', '😢', '😎', '🔥',
@@ -210,7 +211,7 @@ const EditPostModal = ({ post, onSubmit, onCancel, currentUser, isLoading }) => 
                 {existingImages.map((image, index) => (
                   <div key={index} className="relative">
                     <img
-                      src={`http://localhost:3001${image}`}
+                      src={getResourceUrl(image)}
                       alt={`Existing ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border"
                     />

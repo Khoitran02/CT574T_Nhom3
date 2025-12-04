@@ -41,6 +41,30 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Lấy thống kê users
+router.get("/stats", async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({ isActive: true });
+    const adminCount = await User.countDocuments({ isActive: true, role: 'admin' });
+    const regularCount = await User.countDocuments({ isActive: true, role: 'user' });
+    
+    res.status(200).json({
+      message: "Lấy thống kê users thành công",
+      data: {
+        total: totalUsers,
+        active: totalUsers, // All users in DB are active (isActive: true)
+        admins: adminCount,
+        regularUsers: regularCount,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi khi lấy thống kê users",
+      error: err.message,
+    });
+  }
+});
+
 // Tạo user mới
 router.post("/", async (req, res) => {
   try {

@@ -47,13 +47,6 @@ const PostCard = ({ post, onEdit, onDelete }) => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <span className={`px-2 py-1 text-xs rounded-full ${
-            post.isPublished 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-yellow-100 text-yellow-800'
-          }`}>
-            {post.isPublished ? 'Published' : 'Draft'}
-          </span>
           <button onClick={onEdit} className="text-blue-600 hover:text-blue-800">
             <Edit className="w-4 h-4" />
           </button>

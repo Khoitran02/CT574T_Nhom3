@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { User, Users, UserCheck, Lock, Edit, FileText, Camera } from 'lucide-react';
 import { usersAPI, relationshipsAPI, authAPI, postsAPI } from '../services/api';
+import { getResourceUrl } from '../utils/url';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Modal from '../components/UI/Modal';
 import PostCard from '../components/Feed/PostCard';
@@ -241,7 +242,7 @@ const Profile = () => {
               <div className="relative group">
                 {currentUser.avatar ? (
                   <img
-                    src={currentUser.avatar}
+                    src={getResourceUrl(currentUser.avatar)}
                     alt={currentUser.name}
                     className="w-20 h-20 rounded-full object-cover cursor-pointer"
                     onClick={() => setShowAvatarModal(true)}
@@ -358,7 +359,7 @@ const Profile = () => {
         {currentUser.avatar && (
           <div className="space-y-4">
             <img
-              src={currentUser.avatar}
+              src={getResourceUrl(currentUser.avatar)}
               alt={currentUser.name}
               className="w-full max-h-96 object-contain rounded-lg"
             />

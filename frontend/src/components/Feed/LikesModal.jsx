@@ -91,7 +91,7 @@ const LikesModal = ({ likes = [], onClose, currentUser }) => {
                   <div className="flex-shrink-0">
                     {user.avatar ? (
                       <img
-                        src={`http://localhost:3001${user.avatar}`}
+                        src={getResourceUrl(user.avatar)}
                         alt={user.name}
                         className="w-10 h-10 rounded-full object-cover border border-gray-200"
                         onError={(e) => {

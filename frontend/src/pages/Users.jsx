@@ -24,6 +24,11 @@ const Users = () => {
     keepPreviousData: true,
   });
 
+  const { data: statsResponse } = useQuery({
+    queryKey: ['users-stats'],
+    queryFn: usersAPI.getStats,
+  });
+
   const createUserMutation = useMutation({
     mutationFn: usersAPI.create,
     onSuccess: () => {
@@ -53,6 +58,7 @@ const Users = () => {
 
   const users = usersResponse?.data?.data || [];
   const pagination = usersResponse?.data?.pagination || {};
+  const stats = statsResponse?.data?.data || {};
   const currentUserId = users[0]?.user_id;
 
   const handleSubmit = (formData) => {
@@ -98,7 +104,7 @@ const Users = () => {
         </button>
       </div>
 
-      <UserStatsGrid users={users} total={pagination.total} />
+      <UserStatsGrid users={users} total={pagination.total} stats={stats} />
       
       <UserList 
         users={users}

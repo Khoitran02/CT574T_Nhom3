@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Users, UserCheck, FileText } from 'lucide-react';
 import { usersAPI, relationshipsAPI, postsAPI } from '../services/api';
+import { getResourceUrl } from '../utils/url';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import PostCard from '../components/Feed/PostCard';
 import FollowButton from '../components/Social/FollowButton';
@@ -78,7 +79,7 @@ const UserProfile = () => {
             <div className="flex items-center gap-4">
               {user.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={getResourceUrl(user.avatar)}
                   alt={user.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />

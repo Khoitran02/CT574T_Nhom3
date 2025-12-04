@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { postsAPI } from '../services/api';
+import { postsAPI, commentsAPI } from '../services/api';
 import { FileText } from 'lucide-react';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import ErrorMessage from '../components/UI/ErrorMessage';
@@ -24,6 +24,11 @@ const Posts = () => {
     }),
   });
 
+  const { data: commentsResponse } = useQuery({
+    queryKey: ['comments-count'],
+    queryFn: () => commentsAPI.getAll({ page: 1, limit: 1 }), // Chỉ cần total count
+  });
+
   const deletePostMutation = useMutation({
     mutationFn: postsAPI.delete,
     onSuccess: () => {
@@ -34,6 +39,7 @@ const Posts = () => {
 
   const posts = postsResponse?.data?.data || [];
   const pagination = postsResponse?.data?.pagination || {};
+  const totalComments = commentsResponse?.data?.pagination?.total || 0;
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -59,7 +65,7 @@ const Posts = () => {
         {/* Admin chỉ xem và quản lý, không tạo post */}
       </div>
 
-      <PostStatsGrid posts={posts} total={pagination.total} />
+      <PostStatsGrid posts={posts} total={pagination.total} totalComments={totalComments} />
       
       <PostList 
         posts={posts}
