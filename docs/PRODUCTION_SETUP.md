@@ -21,10 +21,10 @@
 
 | Máy | IP | Services | Ports |
 |-----|----|----- |-------|
-| **Máy 1** | 192.168.1.100 | Web App + mongos + Neo4j | 3000, 27017, 7474, 7687 |
-| **Máy 2** | 192.168.1.101 | Config1 + Shard1-N1 + Shard2-N1 + Shard3-N1 | 27019, 27022, 27025, 27028 |
-| **Máy 3** | 192.168.1.102 | Config2 + Shard1-N2 + Shard2-N2 + Shard3-N2 | 27020, 27023, 27026, 27029 |
-| **Máy 4** | 192.168.1.103 | Config3 + Shard1-N3 + Shard2-N3 + Shard3-N3 | 27021, 27024, 27027, 27030 |
+| **Máy 1** | LAPTOP-8AOJN7HN | Web App + mongos + Neo4j | 3000, 27017, 7474, 7687 |
+| **Máy 2** | DESKTOP-0LH5AR4 | Config1 + Shard1-N1 + Shard2-N1 + Shard3-N1 | 27019, 27022, 27025, 27028 |
+| **Máy 3** | CTY9-SP-KHOI | Config2 + Shard1-N2 + Shard2-N2 + Shard3-N2 | 27020, 27023, 27026, 27029 |
+| **Máy 4** | DESKTOP-O4RE9KS | Config3 + Shard1-N3 + Shard2-N3 + Shard3-N3 | 27021, 27024, 27027, 27030 |
 
 **Chi tiết phân bố:**
 
@@ -100,25 +100,25 @@
 4. **Test connectivity:**
    ```cmd
    # Từ mỗi máy, ping các máy khác
-   ping 192.168.1.100
-   ping 192.168.1.101
-   ping 192.168.1.102
-   ping 192.168.1.103
+   ping LAPTOP-8AOJN7HN
+   ping DESKTOP-0LH5AR4
+   ping CTY9-SP-KHOI
+   ping DESKTOP-O4RE9KS
    ```
 
 ### Bước 2: Start Config Servers (3 phút)
 
-**Máy 2 (192.168.1.101) - Config1:**
+**Máy 2 (DESKTOP-0LH5AR4) - Config1:**
 ```powershell
 mongod --configsvr --replSet configrs --port 27019 --dbpath C:\data\config1 --bind_ip 0.0.0.0
 ```
 
-**Máy 3 (192.168.1.102) - Config2:**
+**Máy 3 (CTY9-SP-KHOI) - Config2:**
 ```powershell
 mongod --configsvr --replSet configrs --port 27020 --dbpath C:\data\config2 --bind_ip 0.0.0.0
 ```
 
-**Máy 4 (192.168.1.103) - Config3:**
+**Máy 4 (DESKTOP-O4RE9KS) - Config3:**
 ```powershell
 mongod --configsvr --replSet configrs --port 27021 --dbpath C:\data\config3 --bind_ip 0.0.0.0
 ```
@@ -127,7 +127,7 @@ mongod --configsvr --replSet configrs --port 27021 --dbpath C:\data\config3 --bi
 
 **Từ máy bất kỳ (khuyến nghị Máy 1):**
 ```powershell
-mongosh --host 192.168.1.101 --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: '192.168.1.101:27019'}, {_id: 1, host: '192.168.1.102:27020'}, {_id: 2, host: '192.168.1.103:27021'}]})"
+mongosh --host DESKTOP-0LH5AR4 --port 27019 --eval "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'DESKTOP-0LH5AR4:27019', priority: 2}, {_id: 1, host: 'CTY9-SP-KHOI:27020', priority: 1}, {_id: 2, host: 'DESKTOP-O4RE9KS:27021', priority: 1}]})"
 ```
 
 Đợi 15 giây cho config servers ổn định.
@@ -191,28 +191,28 @@ mongod --shardsvr --replSet shard3rs --port 27030 --dbpath C:\data\shard3-node3 
 
 ```powershell
 # Initialize Shard 1 Replica Set (phân tán trên Máy 2,3,4)
-mongosh --host 192.168.1.101 --port 27022 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: '192.168.1.101:27022'}, {_id: 1, host: '192.168.1.102:27023'}, {_id: 2, host: '192.168.1.103:27024'}]})"
+mongosh --host DESKTOP-0LH5AR4 --port 27022 --eval "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: 'DESKTOP-0LH5AR4:27022', priority: 2}, {_id: 1, host: 'CTY9-SP-KHOI:27023', priority: 1}, {_id: 2, host: 'DESKTOP-O4RE9KS:27024', priority: 1}]})"
 
 # Đợi 15 giây
 Start-Sleep 15
 
 # Initialize Shard 2 Replica Set (phân tán trên Máy 2,3,4)
-mongosh --host 192.168.1.101 --port 27025 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: '192.168.1.101:27025'}, {_id: 1, host: '192.168.1.102:27026'}, {_id: 2, host: '192.168.1.103:27027'}]})"
+mongosh --host DESKTOP-0LH5AR4 --port 27025 --eval "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: 'DESKTOP-0LH5AR4:27025', priority: 2}, {_id: 1, host: 'CTY9-SP-KHOI:27026', priority: 1}, {_id: 2, host: 'DESKTOP-O4RE9KS:27027', priority: 1}]})"
 
 # Đợi 15 giây
 Start-Sleep 15
 
 # Initialize Shard 3 Replica Set (phân tán trên Máy 2,3,4)
-mongosh --host 192.168.1.101 --port 27028 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: '192.168.1.101:27028'}, {_id: 1, host: '192.168.1.102:27029'}, {_id: 2, host: '192.168.1.103:27030'}]})"
+mongosh --host DESKTOP-0LH5AR4 --port 27028 --eval "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: 'DESKTOP-0LH5AR4:27028', priority: 2}, {_id: 1, host: 'CTY9-SP-KHOI:27029', priority: 1}, {_id: 2, host: 'DESKTOP-O4RE9KS:27030', priority: 1}]})"
 ```
 
 Đợi ~30 giây cho tất cả replica sets ổn định.
 
 ### Bước 6: Start mongos Router (1 phút)
 
-**Máy 1 (192.168.1.100):**
+**Máy 1 (LAPTOP-8AOJN7HN):**
 ```powershell
-mongos --configdb "configrs/192.168.1.101:27019,192.168.1.102:27020,192.168.1.103:27021" --port 27017 --bind_ip 0.0.0.0
+mongos --configdb "configrs/DESKTOP-0LH5AR4:27019,CTY9-SP-KHOI:27020,DESKTOP-O4RE9KS:27021" --port 27017 --bind_ip 0.0.0.0
 ```
 
 ### Bước 7: Configure Sharding (3 phút)
@@ -221,21 +221,20 @@ mongos --configdb "configrs/192.168.1.101:27019,192.168.1.102:27020,192.168.1.10
 
 ```powershell
 # 1. Add shards (mỗi shard gồm 3 nodes phân tán trên 3 máy)
-mongosh --port 27017 --eval "sh.addShard('shard1rs/192.168.1.101:27022,192.168.1.102:27023,192.168.1.103:27024')"
-mongosh --port 27017 --eval "sh.addShard('shard2rs/192.168.1.101:27025,192.168.1.102:27026,192.168.1.103:27027')"
-mongosh --port 27017 --eval "sh.addShard('shard3rs/192.168.1.101:27028,192.168.1.102:27029,192.168.1.103:27030')"
+mongosh --port 27017 --eval "sh.addShard('shard1rs/DESKTOP-0LH5AR4:27022,CTY9-SP-KHOI:27023,DESKTOP-O4RE9KS:27024')"
+mongosh --port 27017 --eval "sh.addShard('shard2rs/DESKTOP-0LH5AR4:27025,CTY9-SP-KHOI:27026,DESKTOP-O4RE9KS:27027')"
+mongosh --port 27017 --eval "sh.addShard('shard3rs/DESKTOP-0LH5AR4:27028,CTY9-SP-KHOI:27029,DESKTOP-O4RE9KS:27030')"
 
 # 2. Enable sharding
 mongosh --port 27017 --eval "sh.enableSharding('socialnetwork')"
 
 # 3. Setup sharding cho collections
 cd backend
-node script/setup-sharding.js
+node scripts/setup-sharding.js
 
-# 4. Seed data
-npm run seed
+npm run seed:admin
 
-# 5. Verify
+# 4. Verify
 mongosh --port 27017 --eval "sh.status()"
 ```
 
@@ -260,16 +259,16 @@ mongosh --port 27017 --eval "sh.status()"
 **Từ Máy 1:**
 ```powershell
 # 1. Kiểm tra config replica set
-mongosh --host 192.168.1.101 --port 27019 --eval "rs.status()"
+mongosh --host DESKTOP-0LH5AR4 --port 27019 --eval "rs.status()"
 
 # 2. Kiểm tra shard1 replica set (node1 trên Máy 2)
-mongosh --host 192.168.1.101 --port 27022 --eval "rs.status()"
+mongosh --host DESKTOP-0LH5AR4 --port 27022 --eval "rs.status()"
 
 # 3. Kiểm tra shard2 replica set (node1 trên Máy 2)
-mongosh --host 192.168.1.101 --port 27025 --eval "rs.status()"
+mongosh --host DESKTOP-0LH5AR4 --port 27025 --eval "rs.status()"
 
 # 4. Kiểm tra shard3 replica set (node1 trên Máy 2)
-mongosh --host 192.168.1.101 --port 27028 --eval "rs.status()"
+mongosh --host DESKTOP-0LH5AR4 --port 27028 --eval "rs.status()"
 
 # 5. Kiểm tra cluster sharding
 mongosh --port 27017 --eval "sh.status()"
@@ -283,9 +282,9 @@ npm run test-neo4j
 ```
 
 ### Truy cập services:
-- **Web App**: http://192.168.1.100:3000
-- **MongoDB Router**: mongodb://192.168.1.100:27017/socialnetwork
-- **Neo4j Browser**: http://192.168.1.100:7474
+- **Web App**: http://LAPTOP-8AOJN7HN:3000
+- **MongoDB Router**: mongodb://LAPTOP-8AOJN7HN:27017/socialnetwork
+- **Neo4j Browser**: http://LAPTOP-8AOJN7HN:7474
 
 ---
 
@@ -329,9 +328,9 @@ mongosh --port 27017 --eval "sh.status()"
 mongosh --port 27017 --eval "db.getSiblingDB('socialnetwork').users.find().limit(5)"
 
 # 4. Kiểm tra từng shard - mỗi shard còn 2/3 nodes
-mongosh --host 192.168.1.102 --port 27023 --eval "rs.status()"  # Shard1
-mongosh --host 192.168.1.102 --port 27026 --eval "rs.status()"  # Shard2
-mongosh --host 192.168.1.102 --port 27029 --eval "rs.status()"  # Shard3
+mongosh --host CTY9-SP-KHOI --port 27023 --eval "rs.status()"  # Shard1
+mongosh --host CTY9-SP-KHOI --port 27026 --eval "rs.status()"  # Shard2
+mongosh --host CTY9-SP-KHOI --port 27029 --eval "rs.status()"  # Shard3
 
 # 5. Restart Máy 2 - tất cả nodes tự động rejoin
 ```

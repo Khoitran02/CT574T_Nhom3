@@ -26,7 +26,8 @@ async function setupSharding() {
     try {
       await adminDb.command({
         shardCollection: `${dbName}.users`,
-        key: { _id: 'hashed' }
+        key: { _id: 'hashed' },
+        numInitialChunks: 3
       });
       console.log('    users: Sharded với _id (hashed)');
     } catch (error) {
@@ -40,7 +41,8 @@ async function setupSharding() {
     try {
       await adminDb.command({
         shardCollection: `${dbName}.posts`,
-        key: { authorId: 'hashed' }
+        key: { authorId: 'hashed' },
+        numInitialChunks: 3
       });
       console.log('    posts: Sharded với authorId (hashed)');
     } catch (error) {
@@ -54,7 +56,8 @@ async function setupSharding() {
     try {
       await adminDb.command({
         shardCollection: `${dbName}.comments`,
-        key: { postId: 'hashed' }
+        key: { postId: 'hashed' },
+        numInitialChunks: 3
       });
       console.log('    comments: Sharded với postId (hashed)');
     } catch (error) {
@@ -68,7 +71,7 @@ async function setupSharding() {
     console.log('\n' + '='.repeat(60));
     console.log('\n HOÀN TẤT!\n');
     console.log(' Bước tiếp theo: Chạy seed data');
-    console.log('   npm run seed\n');
+    console.log('   npm run seed:admin\n');
     console.log(' Chunks sẽ tự động được tạo khi insert data đầu tiên\n');
     
   } catch (error) {

@@ -1,6 +1,42 @@
 # Database Seeder Scripts
 
-## 📋 Available Commands
+## � Setup & Verification
+
+### Setup Sharding (TRƯỚC KHI SEED)
+```bash
+node scripts/setup-sharding.js
+```
+**QUAN TRỌNG:** Phải chạy script này TRƯỚC khi seed data để MongoDB tạo chunks đúng cách.
+
+### Verify Shard Distribution (Node.js)
+```bash
+npm run verify:shards
+```
+Kiểm tra xem data đã được phân phối đúng trên các shards chưa:
+- ✅ Phân phối cân bằng (~33% mỗi shard)
+- ✅ Không có orphaned documents
+- ✅ Không có duplicates
+- ✅ So sánh actual vs sample distribution
+
+### Verify Single Document (Mongosh)
+```bash
+mongosh --port 27017
+```
+```javascript
+load('scripts/verify-single-document.js')
+verifyUserLocation(ObjectId("..."))
+verifyPostLocation(ObjectId("..."))
+testRandomDocuments(10)
+```
+Kiểm tra một document cụ thể:
+- ✅ Hash shard key
+- ✅ Predict shard từ chunk ranges
+- ✅ Verify với explain()
+- ✅ So sánh predicted vs actual
+
+📖 **Chi tiết:** Xem [VERIFY_SHARD_GUIDE.md](VERIFY_SHARD_GUIDE.md)
+
+## �📋 Available Commands
 
 ### 1. Demo Seeder
 ```bash

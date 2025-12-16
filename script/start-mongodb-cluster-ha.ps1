@@ -174,7 +174,7 @@ try {
     
     # Step 2: Initialize Config Server Replica Set
     Write-Step "Initializing Config Server Replica Set"
-    Invoke-MongoCommand 27019 "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'localhost:27019'}, {_id: 1, host: 'localhost:27020'}, {_id: 2, host: 'localhost:27021'}]})" "Config RS init"
+    Invoke-MongoCommand 27019 "rs.initiate({_id: 'configrs', configsvr: true, members: [{_id: 0, host: 'localhost:27019', priority: 2}, {_id: 1, host: 'localhost:27020', priority: 1}, {_id: 2, host: 'localhost:27021', priority: 1}]})" "Config RS init"
     Start-Sleep 15
     
     # Step 3: Start Shard 1 Replica Set
@@ -191,7 +191,7 @@ try {
     
     # Step 4: Initialize Shard 1 Replica Set
     Write-Step "Initializing Shard 1 Replica Set"
-    Invoke-MongoCommand 27022 "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: 'localhost:27022'}, {_id: 1, host: 'localhost:27023'}, {_id: 2, host: 'localhost:27024'}]})" "Shard1 RS init"
+    Invoke-MongoCommand 27022 "rs.initiate({_id: 'shard1rs', members: [{_id: 0, host: 'localhost:27022', priority: 2}, {_id: 1, host: 'localhost:27023', priority: 1}, {_id: 2, host: 'localhost:27024', priority: 1}]})" "Shard1 RS init"
     Start-Sleep 15
     
     # Step 5: Start Shard 2 Replica Set
@@ -208,7 +208,7 @@ try {
     
     # Step 6: Initialize Shard 2 Replica Set
     Write-Step "Initializing Shard 2 Replica Set"
-    Invoke-MongoCommand 27025 "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: 'localhost:27025'}, {_id: 1, host: 'localhost:27026'}, {_id: 2, host: 'localhost:27027'}]})" "Shard2 RS init"
+    Invoke-MongoCommand 27025 "rs.initiate({_id: 'shard2rs', members: [{_id: 0, host: 'localhost:27025', priority: 2}, {_id: 1, host: 'localhost:27026', priority: 1}, {_id: 2, host: 'localhost:27027', priority: 1}]})" "Shard2 RS init"
     Start-Sleep 15
     
     # Step 7: Start Shard 3 Replica Set
@@ -225,7 +225,7 @@ try {
     
     # Step 8: Initialize Shard 3 Replica Set
     Write-Step "Initializing Shard 3 Replica Set"
-    Invoke-MongoCommand 27028 "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: 'localhost:27028'}, {_id: 1, host: 'localhost:27029'}, {_id: 2, host: 'localhost:27030'}]})" "Shard3 RS init"
+    Invoke-MongoCommand 27028 "rs.initiate({_id: 'shard3rs', members: [{_id: 0, host: 'localhost:27028', priority: 2}, {_id: 1, host: 'localhost:27029', priority: 1}, {_id: 2, host: 'localhost:27030', priority: 1}]})" "Shard3 RS init"
     Start-Sleep 15
     
     # Step 9: Start mongos Router

@@ -14,7 +14,9 @@
     "test:create-user": "node scripts/create-test-user.js",
     "test-failover": "node scripts/test-shard-failover.js",
     "test-neo4j": "node scripts/test-neo4j.js",
-    "test-mongodb": "node scripts/test-mongodb.js"
+    "test-mongodb": "node scripts/test-mongodb.js",
+    "verify:shards": "node scripts/verify-shard-distribution.js",
+    "verify:shards:hash": "node scripts/verify-shard-distribution.js --verify-hash"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
