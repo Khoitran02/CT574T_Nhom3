@@ -17,16 +17,21 @@ const Posts = () => {
 
   const { data: postsResponse, isLoading, error } = useQuery({
     queryKey: ['posts', page, limit],
-    queryFn: () => postsAPI.getAll({ 
-      page, 
-      limit,
-      userId: currentUser?._id
-    }),
+    queryFn: () => {
+      const params = { page, limit };
+      if (currentUser?._id) {
+        params.userId = currentUser._id;
+      }
+      if (currentUser?.username) {
+        params.username = currentUser.username;
+      }
+      return postsAPI.getAll(params);
+    },
   });
 
   const { data: commentsResponse } = useQuery({
     queryKey: ['comments-count'],
-    queryFn: () => commentsAPI.getAll({ page: 1, limit: 1 }), // Chỉ cần total count
+    queryFn: () => commentsAPI.getAll({ page: 1, limit: 1 }),
   });
 
   const deletePostMutation = useMutation({
@@ -65,7 +70,10 @@ const Posts = () => {
         {/* Admin chỉ xem và quản lý, không tạo post */}
       </div>
 
-      <PostStatsGrid posts={posts} total={pagination.total} totalComments={totalComments} />
+      <PostStatsGrid 
+        total={pagination.total} 
+        totalComments={totalComments} 
+      />
       
       <PostList 
         posts={posts}

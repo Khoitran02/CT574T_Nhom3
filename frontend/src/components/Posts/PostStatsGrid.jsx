@@ -1,23 +1,14 @@
-import { FileText, MessageSquare, Heart } from 'lucide-react';
+import { FileText, MessageSquare } from 'lucide-react';
 import StatCard from '../UI/StatCard';
 
-const PostStatsGrid = ({ posts, total, totalComments }) => {
-  const totalPosts = total || posts.length;
-  const totalLikes = posts.reduce((sum, post) => sum + (post.likes || 0), 0);
-
+const PostStatsGrid = ({ total, totalComments }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <StatCard 
         icon={FileText}
         iconColor="text-blue-600"
-        value={totalPosts}
+        value={total || 0}
         label="Total Posts"
-      />
-      <StatCard 
-        icon={Heart}
-        iconColor="text-red-600"
-        value={totalLikes}
-        label="Total Likes"
       />
       <StatCard 
         icon={MessageSquare}

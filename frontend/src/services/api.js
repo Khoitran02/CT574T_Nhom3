@@ -46,6 +46,7 @@ export const usersAPI = {
 // Posts API
 export const postsAPI = {
   getAll: (params = {}) => api.get('/posts', { params }),
+  getStats: () => api.get('/posts/stats/summary'),
   getById: (id) => api.get(`/posts/${id}`),
   create: (formData) => {
     return api.post('/posts', formData, {

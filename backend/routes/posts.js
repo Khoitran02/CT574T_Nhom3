@@ -15,41 +15,64 @@ router.get("/", async (req, res) => {
     const skip = (page - 1) * limit;
     const currentUserId = req.query.userId; // ID của user đang xem
     
-    // Build filter query - Admin không filter isPublished
+    // Build filter query
     const filter = {};
     
     // KIỂM SOÁT QUYỀN RIÊNG TƯ
+    // Admin xem tất cả posts, user thường chỉ xem theo visibility rules
+    let isAdmin = false;
     if (currentUserId) {
-      // Lấy danh sách người mà currentUser đang follow
-      const session = getNeo4jSession();
-      const followingResult = await session.run(
-        `MATCH (u:User {id: $userId})-[:FOLLOWS]->(followed:User)
-         RETURN followed.id as followedId`,
-        { userId: currentUserId }
-      );
-      await session.close();
-      
-      const followingIds = followingResult.records.map(record => record.get('followedId'));
-      
-      // Filter visibility:
-      // 1. Public posts: Hiển thị cho tất cả
-      // 2. Followers posts: Chỉ hiển thị nếu currentUser follow tác giả HOẶC là chính tác giả
-      // 3. Private posts: Chỉ hiển thị nếu là chính tác giả
-      filter.$or = [
-        { visibility: 'public' },
-        { 
-          visibility: 'followers',
-          $or: [
-            { authorId: { $in: followingIds } },
-            { authorId: currentUserId }
-          ]
-        },
-        { visibility: 'private', authorId: currentUserId }
-      ];
-    } else {
-      // Người dùng chưa đăng nhập: chỉ hiển thị public posts
-      filter.visibility = 'public';
+      try {
+        const currentUser = await User.findById(currentUserId);
+        isAdmin = currentUser?.role === 'admin';
+        
+        // Nếu không tìm thấy user, có thể là admin với ID cũ
+        // Kiểm tra thêm bằng username từ localStorage
+        if (!currentUser && req.query.username === 'admin') {
+          isAdmin = true;
+        }
+      } catch (error) {
+        // Nếu lỗi khi tìm user, kiểm tra username
+        if (req.query.username === 'admin') {
+          isAdmin = true;
+        }
+      }
     }
+    
+    if (!isAdmin) {
+      if (currentUserId) {
+        // User thường: Lấy danh sách người mà currentUser đang follow
+        const session = getNeo4jSession();
+        const followingResult = await session.run(
+          `MATCH (u:User {id: $userId})-[:FOLLOWS]->(followed:User)
+           RETURN followed.id as followedId`,
+          { userId: currentUserId }
+        );
+        await session.close();
+        
+        const followingIds = followingResult.records.map(record => record.get('followedId'));
+        
+        // Filter visibility:
+        // 1. Public posts: Hiển thị cho tất cả
+        // 2. Followers posts: Chỉ hiển thị nếu currentUser follow tác giả HOẶC là chính tác giả
+        // 3. Private posts: Chỉ hiển thị nếu là chính tác giả
+        filter.$or = [
+          { visibility: 'public' },
+          { 
+            visibility: 'followers',
+            $or: [
+              { authorId: { $in: followingIds } },
+              { authorId: currentUserId }
+            ]
+          },
+          { visibility: 'private', authorId: currentUserId }
+        ];
+      } else {
+        // Người dùng chưa đăng nhập: chỉ hiển thị public posts
+        filter.visibility = 'public';
+      }
+    }
+    // Admin: không filter visibility, xem tất cả posts
     
     // Filter by author name (case-insensitive partial match)
     if (req.query.author) {
@@ -382,6 +405,27 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({
       message: "Lỗi khi xóa post",
       error: error.message,
+    });
+  }
+});
+
+// Lấy thống kê tổng hợp
+router.get("/stats/summary", async (req, res) => {
+  try {
+    const totalLikesResult = await Post.aggregate([
+      { $group: { _id: null, totalLikes: { $sum: "$likes" } } }
+    ]);
+    
+    const totalLikes = totalLikesResult.length > 0 ? totalLikesResult[0].totalLikes : 0;
+
+    res.status(200).json({
+      message: "Lấy thống kê thành công",
+      data: { totalLikes },
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi khi lấy thống kê",
+      error: err.message,
     });
   }
 });
