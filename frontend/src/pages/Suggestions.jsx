@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { relationshipsAPI } from '../services/api';
@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const Suggestions = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [followedUsers, setFollowedUsers] = useState(new Set());
 
@@ -26,6 +27,8 @@ const Suggestions = () => {
     queryKey: ['suggestions-mutual', currentUser?._id],
     queryFn: () => relationshipsAPI.getSuggestions(currentUser._id, { limit: 15 }),
     enabled: !!currentUser,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   // Follow mutation
@@ -34,6 +37,11 @@ const Suggestions = () => {
     onMutate: async ({ followeeId }) => {
       // Mark as followed immediately
       setFollowedUsers(prev => new Set([...prev, followeeId]));
+    },
+    onSuccess: () => {
+      // Invalidate và refetch suggestions để cập nhật follower count
+      queryClient.invalidateQueries({ queryKey: ['suggestions-mutual', currentUser?._id] });
+      queryClient.invalidateQueries({ queryKey: ['followingIds', currentUser?._id] });
     },
     onError: (error, { followeeId }) => {
       // Rollback on error

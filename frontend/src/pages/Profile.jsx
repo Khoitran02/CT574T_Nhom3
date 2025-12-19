@@ -43,6 +43,8 @@ const Profile = () => {
     queryKey: ['stats', currentUser?._id],
     queryFn: () => relationshipsAPI.getStats(currentUser._id),
     enabled: !!currentUser,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: followersData } = useQuery({
@@ -67,6 +69,8 @@ const Profile = () => {
     queryKey: ['posts', currentUser?._id],
     queryFn: () => postsAPI.getAll({ userId: currentUser?._id }),
     enabled: !!currentUser,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const updateProfileMutation = useMutation({

@@ -6,7 +6,7 @@ import { usersAPI, relationshipsAPI, postsAPI } from '../services/api';
 import { getResourceUrl } from '../utils/url';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import PostCard from '../components/Feed/PostCard';
-import FollowButton from '../components/Social/FollowButton';
+import ProfileFollowButton from '../components/Social/ProfileFollowButton';
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -30,18 +30,24 @@ const UserProfile = () => {
     queryKey: ['user', userId],
     queryFn: () => usersAPI.getById(userId),
     enabled: !!userId && !!currentUser,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: statsData } = useQuery({
     queryKey: ['stats', userId],
     queryFn: () => relationshipsAPI.getStats(userId),
     enabled: !!userId,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: postsResponse } = useQuery({
     queryKey: ['posts', currentUser?._id],
     queryFn: () => postsAPI.getAll({ userId: currentUser?._id }), // Truyền currentUser._id để filter visibility
     enabled: !!userId && !!currentUser,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   if (!currentUser || userLoading) return <LoadingSpinner />;
@@ -94,7 +100,7 @@ const UserProfile = () => {
                 <p className="text-gray-500 text-sm">{user.email}</p>
               </div>
             </div>
-            <FollowButton 
+            <ProfileFollowButton 
               currentUserId={currentUser._id} 
               targetUserId={userId} 
             />
